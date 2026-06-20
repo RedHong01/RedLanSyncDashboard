@@ -4,13 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Red5090 / RedM3Max LAN Sync</title>
+  <link rel="icon" href="/app-icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">
-        <span class="brand-mark">R</span>
+        <img class="brand-mark" src="/app-icon.svg" alt="" aria-hidden="true">
         <div>
           <strong>Red Sync</strong>
           <span>Red5090 / RedM3Max</span>
@@ -367,6 +368,22 @@
             </div>
           </article>
 
+          <article class="device-card">
+            <div class="dock-card-head">
+              <img class="dock-preview-icon" src="/app-icon.svg" alt="" aria-hidden="true">
+              <div>
+                <h3 data-i18n="dockShortcutTitle">Dock 快捷方式</h3>
+                <p data-i18n="dockShortcutBody">把控制台入口固定在 macOS Dock，并使用同一套应用图标。</p>
+              </div>
+            </div>
+            <div class="dock-actions">
+              <button class="button secondary" id="installDockButton" type="button" data-i18n="installDockShortcut">安装/刷新 Dock 快捷方式</button>
+              <span id="dockShortcutPath" class="mono muted">--</span>
+            </div>
+          </article>
+        </div>
+
+        <div class="pairing-grid lower">
           <article class="device-card">
             <h3 data-i18n="sharedFolder">共享文件夹</h3>
             <dl class="pair-facts">

@@ -15,6 +15,6 @@
   "mac_ip": "192.168.0.10",
   "mac_mac": "aa:bb:cc:dd:ee:ff",
   "github_repo": "YOUR_GITHUB_USER/RedLanSyncDashboard",
-  "current_version": "0.1.0",
+  "current_version": "0.1.1",
   "shared_token": ""
 }

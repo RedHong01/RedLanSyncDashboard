@@ -21,6 +21,12 @@ Mac browser UI
 - `project_packager.py`: cross-platform filename planner, safe-copy worker, and report writer.
 - `static/`：浏览器控制台前端。
 - `static/`: browser dashboard.
+- `static/app-icon.svg`：网页 favicon、侧边栏品牌图标和 Dock 快捷方式卡片使用的共享应用图标。
+- `static/app-icon.svg`: shared app icon used by the web favicon, sidebar brand mark, and Dock shortcut card.
+- `mac/generate_app_icon.py`：用 Python 标准库生成 macOS `.iconset` PNG 文件，供 `iconutil` 打包为 `.icns`。
+- `mac/generate_app_icon.py`: generates macOS `.iconset` PNG files with the Python standard library so `iconutil` can package them into `.icns`.
+- `mac/install-dock-shortcut.sh`：创建/刷新 macOS Dock `.app` 快捷方式，并写入同一套应用图标。
+- `mac/install-dock-shortcut.sh`: creates or refreshes the macOS Dock `.app` shortcut and applies the shared app icon.
 - `windows/LanSyncAgent.ps1`：Windows companion service。
 - `windows/LanSyncAgent.ps1`: Windows companion service.
 - `windows/install-agent.ps1`：Windows 安装器、防火墙规则、计划任务和桌面唤醒快捷方式。
@@ -44,3 +50,9 @@ Mac browser UI
 规范化流程不会重命名源文件夹。它会创建新的目标文件夹，并写入包含映射、跳过文件、冲突和可选 After Effects 辅助脚本的报告。
 
 The normalization workflow never renames the source folder. It builds a new destination folder and writes a report with mappings, skipped files, collisions, and optional After Effects helper scripts.
+
+## Repo 架构更新规则 / Repo Architecture Update Rule
+
+每次功能、API、部署方式、目录结构、前端模块、Mac Dock 入口或 Windows companion agent 发生变化时，本架构文档必须跟着更新。
+
+Every time a feature, API, deployment flow, directory structure, front-end module, Mac Dock entry, or Windows companion agent changes, this architecture document must be updated in the same change.

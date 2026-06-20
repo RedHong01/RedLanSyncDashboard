@@ -28,7 +28,7 @@ APP_DIR = Path(__file__).resolve().parent
 STATIC_DIR = APP_DIR / "static"
 CONFIG_PATH = APP_DIR / "config.json"
 STATE_PATH = APP_DIR / "runtime-state.json"
-APP_VERSION = "0.1.0"
+APP_VERSION = "0.1.1"
 
 DEFAULT_CONFIG = {
     "listen_host": "0.0.0.0",
@@ -741,6 +741,7 @@ def pairing_info():
     )
     dashboard_urls = list(dict.fromkeys(dashboard_urls))
     windows_tool_path = str(Path(config["sync_root"]) / "_tools" / "LanSyncDashboardWindows")
+    dock_app_path = str(Path.home() / "Applications" / "Red LAN Sync.app")
     return {
         "controller": {
             "name": config["local_name"],
@@ -769,8 +770,34 @@ def pairing_info():
             "windows_agent_port": config["remote_agent_port"],
             "remote_project_base": config["remote_project_base"],
         },
+        "dock": {
+            "supported": platform.system() == "Darwin",
+            "app_path": dock_app_path,
+            "icon_path": "/app-icon.svg",
+            "installed": Path(dock_app_path).exists(),
+        },
         "syncthing_error": syncthing_error,
     }
+
+
+def install_dock_shortcut():
+    if platform.system() != "Darwin":
+        return {"ok": False, "supported": False, "message": "Dock shortcuts are only supported on macOS"}
+    script = APP_DIR / "mac" / "install-dock-shortcut.sh"
+    if not script.is_file():
+        raise FileNotFoundError("Dock installer not found: {}".format(script))
+    result = subprocess.run(
+        ["/bin/zsh", str(script)],
+        cwd=str(APP_DIR),
+        text=True,
+        capture_output=True,
+        timeout=90,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise RuntimeError((result.stderr or result.stdout or "Dock installer failed").strip())
+    app_path = str(Path.home() / "Applications" / "Red LAN Sync.app")
+    return {"ok": True, "supported": True, "app_path": app_path, "output": result.stdout.strip()}
 
 
 def add_syncthing_device(payload):
@@ -1029,6 +1056,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json({"ok": True, "sent_to": send_magic_packet(mac)})
             if path == "/api/sync/resume":
                 return self.send_json(resume_current_sync(payload))
+            if path == "/api/dock/install":
+                return self.send_json(install_dock_shortcut())
             if path == "/api/remote/target":
                 target = payload.get("path", "")
                 if not target:

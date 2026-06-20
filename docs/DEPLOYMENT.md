@@ -17,11 +17,19 @@ python3 server.py
 ./install-mac-service.sh
 ```
 
-6. 可选 Dock 快捷方式。 / Optional Dock shortcut:
+重复运行安装脚本会更新服务代码，但会保留安装目录中的 `config.json` 和 `runtime-state.json`。
+
+Running the installer again updates the service code while preserving `config.json` and `runtime-state.json` in the installed directory.
+
+6. 可选 Dock 快捷方式。脚本会生成 macOS `.icns` 图标并刷新 Dock。 / Optional Dock shortcut. The script generates the macOS `.icns` icon and refreshes the Dock:
 
 ```sh
 ./mac/install-dock-shortcut.sh
 ```
+
+也可以在网页控制台的 `Pairing` 页面点击 `安装/刷新 Dock 快捷方式`。
+
+You can also click `Install/Refresh Dock Shortcut` on the dashboard `Pairing` page.
 
 ## Windows 节点 / Windows Node
 

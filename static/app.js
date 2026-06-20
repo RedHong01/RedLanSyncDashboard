@@ -79,6 +79,12 @@ const i18n = {
     controllerAccess: "控制台入口",
     copyLanUrl: "复制局域网地址",
     copyDeviceId: "复制本机设备 ID",
+    dockShortcutTitle: "Dock 快捷方式",
+    dockShortcutBody: "把控制台入口固定在 macOS Dock，并使用同一套应用图标。",
+    installDockShortcut: "安装/刷新 Dock 快捷方式",
+    dockShortcutPath: "Dock 路径",
+    dockShortcutInstalled: "Dock 快捷方式已安装并刷新图标",
+    dockShortcutUnsupported: "当前系统不支持 Dock 快捷方式安装",
     sharedFolder: "共享文件夹",
     folderPath: "本机路径",
     deviceId: "本机设备 ID",
@@ -141,6 +147,7 @@ const i18n = {
     busySubmitted: "任务已提交",
     busySending: "正在发送",
     busySaving: "保存中",
+    busyInstalling: "安装中",
     busyRegistering: "注册中",
     busyAdding: "添加中",
     busyResuming: "继续中",
@@ -247,6 +254,12 @@ const i18n = {
     controllerAccess: "Controller Access",
     copyLanUrl: "Copy LAN URL",
     copyDeviceId: "Copy Device ID",
+    dockShortcutTitle: "Dock Shortcut",
+    dockShortcutBody: "Pin this controller to the macOS Dock and use the shared app icon.",
+    installDockShortcut: "Install/Refresh Dock Shortcut",
+    dockShortcutPath: "Dock path",
+    dockShortcutInstalled: "Dock shortcut installed and icon refreshed",
+    dockShortcutUnsupported: "Dock shortcut installation is not supported on this system",
     sharedFolder: "Shared Folder",
     folderPath: "Local Path",
     deviceId: "Local Device ID",
@@ -309,6 +322,7 @@ const i18n = {
     busySubmitted: "Submitted",
     busySending: "Sending",
     busySaving: "Saving",
+    busyInstalling: "Installing",
     busyRegistering: "Registering",
     busyAdding: "Adding",
     busyResuming: "Resuming",
@@ -871,6 +885,11 @@ function renderPairing(data) {
     `).join("")
     : `<div class="empty-state">${escapeHtml(t("loading"))}</div>`;
   $("controllerDeviceId").textContent = data.controller.device_id || "--";
+  const dock = data.dock || {};
+  $("installDockButton").disabled = !dock.supported;
+  $("dockShortcutPath").textContent = dock.supported
+    ? `${t("dockShortcutPath")}: ${dock.app_path || "--"}`
+    : t("dockShortcutUnsupported");
   $("pairFolderId").textContent = data.folder.id || "--";
   $("pairFolderPath").textContent = data.folder.path || "--";
   renderKnownDevices(data.known_devices || []);
@@ -907,6 +926,23 @@ function renderPendingDevices(devices) {
       <button class="button secondary use-pending" type="button" data-device-id="${escapeHtml(item.device_id)}" data-device-name="${escapeHtml(item.name || "")}">${escapeHtml(t("pendingUse"))}</button>
     </div>
   `).join("");
+}
+
+async function installDockShortcut() {
+  const button = $("installDockButton");
+  setBusy(button, true, "busyInstalling");
+  try {
+    const result = await api("/api/dock/install", {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+    toast(result.supported === false ? t("dockShortcutUnsupported") : t("dockShortcutInstalled"));
+    await refreshPairing();
+  } catch (error) {
+    toast(error.message, true);
+  } finally {
+    setBusy(button, false);
+  }
 }
 
 async function refreshPairing(showToast = false) {
@@ -1022,6 +1058,7 @@ $("registerForm").addEventListener("submit", registerProject);
 $("quickRegisterForm").addEventListener("submit", registerQuickProject);
 $("useDestinationForSync").addEventListener("click", useDestinationForSync);
 $("addDeviceForm").addEventListener("submit", addDevice);
+$("installDockButton").addEventListener("click", installDockShortcut);
 $("dismissUpdateBubble").addEventListener("click", dismissUpdateBubble);
 $("copyDashboardUrl").addEventListener("click", () => copyText((state.pairing?.controller?.dashboard_urls || [])[1] || (state.pairing?.controller?.dashboard_urls || [])[0] || ""));
 $("copyControllerId").addEventListener("click", () => copyText(state.pairing?.controller?.device_id || ""));

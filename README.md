@@ -24,6 +24,8 @@ Red LAN Sync Dashboard is a local-first LAN control panel for a Mac/Windows Sync
 - Sends Wake-on-LAN packets when firmware and network settings support it.
 - 提供新电脑或 Android Syncthing 客户端的配对页面。
 - Provides a pairing page for new computers or Android Syncthing clients.
+- 在网页控制台和 macOS Dock 快捷方式中使用同一套应用图标，并支持从网页刷新 Dock 快捷方式。
+- Uses the same app icon in the web console and macOS Dock shortcut, with a web action to refresh the Dock shortcut.
 - 检查配置的 GitHub 仓库是否有新版本，并显示更新预览气泡。
 - Checks the configured GitHub repository for newer tool architecture releases and shows an update preview bubble.
 - 支持网页控制台中文/英文切换。
@@ -113,7 +115,7 @@ Set `github_repo` and `current_version` in `config.json`:
 ```json
 {
   "github_repo": "YOUR_GITHUB_USER/RedLanSyncDashboard",
-  "current_version": "0.1.0"
+  "current_version": "0.1.1"
 }
 ```
 
@@ -126,6 +128,12 @@ When a newer GitHub Release exists, the dashboard shows a small update preview b
 所有 README、GitHub 项目首页、贡献说明、安全说明、部署说明、架构说明和其他面向用户/开发者的说明文件，都必须保持中英文双语。
 
 All README files, GitHub homepage content, contributing notes, security notes, deployment guides, architecture notes, and other user/developer-facing documentation must remain bilingual in Chinese and English.
+
+## Repo 架构更新规则 / Repo Architecture Update Rule
+
+每次功能、API、部署方式、目录结构、前端模块、Mac Dock 入口或 Windows companion agent 有更新后，都必须同步更新 GitHub repo 中的 `README.md`、`docs/ARCHITECTURE.md`、`docs/DEPLOYMENT.md` 和相关 release/update 说明。
+
+Every time a feature, API, deployment flow, directory structure, front-end module, Mac Dock entry, or Windows companion agent changes, the GitHub repo must also update `README.md`, `docs/ARCHITECTURE.md`, `docs/DEPLOYMENT.md`, and any relevant release/update notes.
 
 ## 文档 / Docs
 

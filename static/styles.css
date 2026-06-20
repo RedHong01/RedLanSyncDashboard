@@ -80,6 +80,7 @@ button {
   background: #eff8f5;
   color: var(--green);
   font-weight: 800;
+  object-fit: cover;
 }
 
 .brand strong,
@@ -389,6 +390,40 @@ button {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 7px;
+}
+
+.dock-card-head {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+}
+
+.dock-preview-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(22, 33, 38, 0.14);
+}
+
+.dock-card-head p {
+  white-space: normal;
+  line-height: 1.45;
+}
+
+.dock-actions {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.dock-actions span {
+  overflow: hidden;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .device-card-head {
@@ -1268,6 +1303,14 @@ th:nth-child(2) {
 
   .copy-row {
     display: grid;
+  }
+
+  .dock-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .dock-actions .button {
+    width: 100%;
   }
 
   .copy-row .button,

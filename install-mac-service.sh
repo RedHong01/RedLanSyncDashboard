@@ -6,9 +6,24 @@ INSTALL_DIR="$HOME/Library/Application Support/RedLanSyncDashboard"
 PLIST="$HOME/Library/LaunchAgents/com.redwang.lansyncdashboard.plist"
 LOG_DIR="$HOME/Library/Logs"
 PYTHON_BIN="$(command -v python3)"
+BACKUP_DIR="$(mktemp -d)"
 
 mkdir -p "$HOME/Library/LaunchAgents" "$LOG_DIR" "$INSTALL_DIR"
+
+for runtime_file in config.json runtime-state.json; do
+    if [[ -f "$INSTALL_DIR/$runtime_file" ]]; then
+        cp "$INSTALL_DIR/$runtime_file" "$BACKUP_DIR/$runtime_file"
+    fi
+done
+
 /usr/bin/ditto "$SCRIPT_DIR" "$INSTALL_DIR"
+
+for runtime_file in config.json runtime-state.json; do
+    if [[ -f "$BACKUP_DIR/$runtime_file" ]]; then
+        cp "$BACKUP_DIR/$runtime_file" "$INSTALL_DIR/$runtime_file"
+    fi
+done
+rm -rf "$BACKUP_DIR"
 
 cat > "$PLIST" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>

@@ -50,6 +50,15 @@ If you changed the UI, also test:
 - UI 文案本身仍通过 `static/app.js` 的 `i18n` 维护。
 - UI copy itself should still be maintained through `static/app.js` `i18n`.
 
+## Repo 架构更新规则 / Repo Architecture Update Rule
+
+- 每次功能、API、部署方式、目录结构、前端模块、Mac Dock 入口或 Windows companion agent 有更新后，必须同步更新 repo 架构说明。
+- Every time a feature, API, deployment flow, directory structure, front-end module, Mac Dock entry, or Windows companion agent changes, the repo architecture notes must be updated in the same change.
+- 至少检查并更新 `README.md`、`docs/ARCHITECTURE.md`、`docs/DEPLOYMENT.md`，以及需要面向用户展示的 release/update 说明。
+- At minimum, check and update `README.md`, `docs/ARCHITECTURE.md`, `docs/DEPLOYMENT.md`, and any user-facing release/update notes.
+- 如果修改影响网页控制台，必须确认中英文 UI 文案和移动端布局仍然正常。
+- If a change affects the web console, confirm that bilingual UI text and the mobile layout still work.
+
 ## 合并请求 / Pull Requests
 
 请说明：
