@@ -12,7 +12,8 @@ Mac browser UI
       -> Windows Syncthing REST API
       -> Windows disk and power APIs
 Windows browser
-  -> red-lan-sync.local hosts alias
+  -> OpenDashboard.ps1 smart launcher
+  -> /auth token cookie
   -> Mac dashboard server on TCP 8765
 ```
 
@@ -36,6 +37,8 @@ Windows browser
 - `mac/install-dock-shortcut.sh`: creates or refreshes the macOS Dock `.app` shortcut and applies the shared app icon.
 - `windows/LanSyncAgent.ps1`：Windows companion service。
 - `windows/LanSyncAgent.ps1`: Windows companion service.
+- `windows/OpenDashboard.ps1`：Windows 智能启动器，自动测试文字域名和 Mac IP fallback，并用配对 token 打开可操作网页会话。
+- `windows/OpenDashboard.ps1`: Windows smart launcher that tests the friendly alias and Mac IP fallback, then opens an authenticated browser session with the pairing token.
 - `windows/DependencyScan.ps1`：Windows 字体、Adobe 应用和插件清单扫描函数，供 companion API 和独立检查脚本复用。
 - `windows/DependencyScan.ps1`: Windows font, Adobe app, and plugin inventory functions shared by the companion API and standalone check script.
 - `windows/install-agent.ps1`：Windows 安装器、防火墙规则、计划任务和桌面唤醒快捷方式。
@@ -51,8 +54,8 @@ Windows browser
 - Private secrets stay in ignored runtime config files.
 - 自定义图标保存在被忽略的 `runtime-assets/` 中，属于本机运行时状态。
 - Custom icons are stored in ignored `runtime-assets/` as local runtime state.
-- 会修改系统状态的 API action 需要 localhost 或 shared companion token。
-- Mutating API actions require localhost or the shared companion token.
+- 会修改系统状态的 API action 需要 localhost、shared companion token header，或由 `/auth` 设置的 HttpOnly 浏览器会话 cookie。
+- Mutating API actions require localhost, the shared companion token header, or an HttpOnly browser session cookie set by `/auth`.
 - 控制台设计用于可信局域网，不用于公网暴露。
 - The dashboard is designed for trusted LAN use, not public internet exposure.
 - Syncthing 仍然是文件同步引擎；本项目负责设置编排、可视化和工程卫生检查。

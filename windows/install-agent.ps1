@@ -86,6 +86,7 @@ if ([string]::IsNullOrWhiteSpace([string]$bundle.Token)) {
 New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
 Copy-Item -LiteralPath "$PSScriptRoot\LanSyncAgent.ps1" -Destination "$InstallDir\LanSyncAgent.ps1" -Force
 Copy-Item -LiteralPath "$PSScriptRoot\DependencyScan.ps1" -Destination "$InstallDir\DependencyScan.ps1" -Force
+Copy-Item -LiteralPath "$PSScriptRoot\OpenDashboard.ps1" -Destination "$InstallDir\OpenDashboard.ps1" -Force
 Copy-Item -LiteralPath $BundleConfig -Destination "$InstallDir\agent-config.json" -Force
 
 $ruleName = "Red LAN Sync Companion 8766"
@@ -185,17 +186,31 @@ IconFile=%SystemRoot%\System32\shell32.dll
 IconIndex=27
 "@ | Set-Content -LiteralPath $shortcutPath -Encoding ASCII
 
-$dashboardShortcutPath = Join-Path ([Environment]::GetFolderPath("Desktop")) "Red LAN Sync Dashboard.url"
-@"
+$launcherPath = "$InstallDir\OpenDashboard.ps1"
+$dashboardShortcutPath = Join-Path ([Environment]::GetFolderPath("Desktop")) "Red LAN Sync Dashboard.lnk"
+try {
+    $shell = New-Object -ComObject WScript.Shell
+    $shortcut = $shell.CreateShortcut($dashboardShortcutPath)
+    $shortcut.TargetPath = "powershell.exe"
+    $shortcut.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$launcherPath`" -ConfigPath `"$configPath`""
+    $shortcut.WorkingDirectory = $InstallDir
+    $shortcut.IconLocation = "$env:SystemRoot\System32\shell32.dll,13"
+    $shortcut.Save()
+}
+catch {
+    Write-Warning "无法创建智能启动器快捷方式，将创建直接 URL 兜底入口。错误：$($_.Exception.Message)"
+    $dashboardShortcutPath = Join-Path ([Environment]::GetFolderPath("Desktop")) "Red LAN Sync Dashboard.url"
+    @"
 [InternetShortcut]
 URL=$dashboardEntryUrl/
 IconFile=%SystemRoot%\System32\shell32.dll
 IconIndex=13
 "@ | Set-Content -LiteralPath $dashboardShortcutPath -Encoding ASCII
+}
 
 $startMenuDir = Join-Path ([Environment]::GetFolderPath("Programs")) "Red LAN Sync"
 New-Item -ItemType Directory -Path $startMenuDir -Force | Out-Null
-Copy-Item -LiteralPath $dashboardShortcutPath -Destination (Join-Path $startMenuDir "Red LAN Sync Dashboard.url") -Force
+Copy-Item -LiteralPath $dashboardShortcutPath -Destination (Join-Path $startMenuDir (Split-Path -Leaf $dashboardShortcutPath)) -Force
 
 Write-Host ""
 Write-Host "Red LAN Sync Companion 已安装并启动。" -ForegroundColor Green

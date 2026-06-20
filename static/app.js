@@ -101,7 +101,7 @@ const i18n = {
     controllerAccess: "控制台入口",
     copyLanUrl: "复制局域网地址",
     copyDeviceId: "复制本机设备 ID",
-    windowsAccessHint: "Windows 端请打开局域网地址；127.0.0.1 只适用于运行控制台的这台电脑。",
+    windowsAccessHint: "Windows 端推荐使用桌面 Red LAN Sync Dashboard 启动器；手动输入时使用 Mac 局域网 IP，red-lan-sync.local 需要安装器写入 hosts。",
     dockShortcutTitle: "Dock 快捷方式",
     dockShortcutBody: "把控制台入口固定在 macOS Dock，并使用同一套应用图标。",
     uploadCustomIcon: "上传自定义图标",
@@ -311,7 +311,7 @@ const i18n = {
     controllerAccess: "Controller Access",
     copyLanUrl: "Copy LAN URL",
     copyDeviceId: "Copy Device ID",
-    windowsAccessHint: "On Windows, open the LAN URL. 127.0.0.1 only works on the computer running the dashboard.",
+    windowsAccessHint: "On Windows, use the desktop Red LAN Sync Dashboard launcher. For manual entry, use the Mac LAN IP; red-lan-sync.local requires the installer hosts entry.",
     dockShortcutTitle: "Dock Shortcut",
     dockShortcutBody: "Pin this controller to the macOS Dock and use the shared app icon.",
     uploadCustomIcon: "Upload Custom Icon",
@@ -536,6 +536,29 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function dashboardUrlHost(value) {
+  try {
+    return new URL(value).hostname;
+  } catch (error) {
+    return "";
+  }
+}
+
+function isIpv4DashboardUrl(value) {
+  const host = dashboardUrlHost(value);
+  return /^\d{1,3}(\.\d{1,3}){3}$/.test(host) && !host.startsWith("127.");
+}
+
+function preferredLanDashboardUrl(urls) {
+  return urls.find(isIpv4DashboardUrl)
+    || urls.find((url) => {
+      const host = dashboardUrlHost(url);
+      return host && host !== "localhost" && !host.startsWith("127.");
+    })
+    || urls[0]
+    || "";
 }
 
 function toast(message, error = false) {
@@ -1382,7 +1405,7 @@ $("customIconFile").addEventListener("change", (event) => {
 $("uploadIconButton").addEventListener("click", uploadCustomIcon);
 $("resetIconButton").addEventListener("click", resetCustomIcon);
 $("dismissUpdateBubble").addEventListener("click", dismissUpdateBubble);
-$("copyDashboardUrl").addEventListener("click", () => copyText((state.pairing?.controller?.dashboard_urls || [])[1] || (state.pairing?.controller?.dashboard_urls || [])[0] || ""));
+$("copyDashboardUrl").addEventListener("click", () => copyText(preferredLanDashboardUrl(state.pairing?.controller?.dashboard_urls || [])));
 $("copyControllerId").addEventListener("click", () => copyText(state.pairing?.controller?.device_id || ""));
 
 document.addEventListener("click", (event) => {

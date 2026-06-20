@@ -98,6 +98,14 @@ function Get-DashboardEntryUrl {
     return ([string]$script:Config.DashboardUrl).TrimEnd("/")
 }
 
+function Get-DashboardAuthUrl {
+    $baseUrl = Get-DashboardEntryUrl
+    if ([string]::IsNullOrWhiteSpace([string]$script:Config.Token)) {
+        return $baseUrl + "/"
+    }
+    return $baseUrl + "/auth?token=" + [Uri]::EscapeDataString([string]$script:Config.Token)
+}
+
 function Test-UrlHostResolvable {
     param([Parameter(Mandatory = $true)][string]$Url)
 
@@ -369,7 +377,7 @@ function Handle-Request {
         }
 
         if ($method -eq "GET" -and $path -in @("/dashboard", "/dashboard/") -and $isLoopback) {
-            Write-RedirectResponse -Context $Context -Location ((Get-DashboardEntryUrl) + "/")
+            Write-RedirectResponse -Context $Context -Location (Get-DashboardAuthUrl)
             return
         }
 

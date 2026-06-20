@@ -5,6 +5,7 @@ import argparse
 import base64
 import binascii
 import hashlib
+import http.cookies
 import json
 import mimetypes
 import os
@@ -1258,15 +1259,20 @@ class Handler(BaseHTTPRequestHandler):
         return self.client_address[0] in {"127.0.0.1", "::1"}
 
     def token_valid(self):
+        config = load_config()
+        cookie = http.cookies.SimpleCookie(self.headers.get("Cookie", ""))
+        cookie_token = ""
+        if "LanSyncToken" in cookie:
+            cookie_token = cookie["LanSyncToken"].value
         return secrets.compare_digest(
             self.headers.get("X-LanSync-Token", ""),
-            load_config()["shared_token"],
-        )
+            config["shared_token"],
+        ) or secrets.compare_digest(cookie_token, config["shared_token"])
 
     def require_action_access(self):
         if self.client_is_local() or self.token_valid():
             return True
-        self.send_json({"error": "Action requires localhost or companion token"}, status=403)
+        self.send_json({"error": "Action requires localhost, companion token, or launcher-authenticated browser session"}, status=403)
         return False
 
     def read_json(self):
@@ -1285,10 +1291,32 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def send_redirect(self, location, status=302, headers=None):
+        data = b""
+        self.send_response(status)
+        self.send_header("Location", location)
+        self.send_header("Cache-Control", "no-store")
+        for key, value in (headers or {}).items():
+            self.send_header(key, value)
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
         try:
+            if path == "/auth":
+                query = urllib.parse.parse_qs(parsed.query)
+                token = (query.get("token") or [""])[0]
+                if not secrets.compare_digest(token, load_config()["shared_token"]):
+                    return self.send_json({"error": "Invalid dashboard token"}, 403)
+                cookie = http.cookies.SimpleCookie()
+                cookie["LanSyncToken"] = token
+                cookie["LanSyncToken"]["path"] = "/"
+                cookie["LanSyncToken"]["max-age"] = 60 * 60 * 24 * 14
+                cookie["LanSyncToken"]["httponly"] = True
+                cookie["LanSyncToken"]["samesite"] = "Lax"
+                return self.send_redirect("/", headers={"Set-Cookie": cookie.output(header="").strip()})
             if path == "/api/overview":
                 return self.send_json(overview())
             if path == "/api/config":

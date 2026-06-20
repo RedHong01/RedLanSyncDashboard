@@ -31,17 +31,17 @@ Alternatively, use `File -> Add local repository` in GitHub Desktop and select t
 
 ## 网页客户端地址 / Web Client URL
 
-网页客户端是同一个 Mac 控制端页面，不会在 Windows companion agent 上另起一个独立控制台。Windows companion installer 会把工具名别名写入 hosts，因此日常入口是：
+网页客户端是同一个 Mac 控制端页面，不会在 Windows companion agent 上另起一个独立控制台。Windows 日常入口应使用桌面或开始菜单里的 `Red LAN Sync Dashboard` 智能启动器；它会自动选择可用地址并建立可操作会话。
 
-The web client is the same Mac-hosted dashboard, not a separate dashboard served by the Windows companion agent. The Windows companion installer writes the tool-name alias into hosts, so the daily entry point is:
+The web client is the same Mac-hosted dashboard, not a separate dashboard served by the Windows companion agent. On Windows, use the desktop or Start Menu `Red LAN Sync Dashboard` smart launcher; it selects a reachable URL and opens an authenticated session.
 
 ```text
-http://red-lan-sync.local:8765
+Red LAN Sync Dashboard.lnk
 ```
 
-如果别名不可用，Windows 浏览器打开 Pairing 页面显示的 Mac 局域网地址，例如：
+如果需要手动输入，使用 Pairing 页面显示的 Mac 局域网地址，例如：
 
-If the alias is unavailable, open the Mac LAN URL shown on the Pairing page, for example:
+For manual entry, use the Mac LAN URL shown on the Pairing page, for example:
 
 ```text
 http://192.168.0.243:8765
