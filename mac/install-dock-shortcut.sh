@@ -8,6 +8,8 @@ RESOURCES="$APP_DIR/Contents/Resources"
 SCRIPT_DIR="${0:A:h}"
 ROOT_DIR="${SCRIPT_DIR:h}"
 RUNTIME_ASSETS="$ROOT_DIR/runtime-assets"
+LAUNCHER_SOURCE="$SCRIPT_DIR/OpenDashboard.sh"
+LAUNCHER="$RESOURCES/OpenDashboard.sh"
 SOURCE_ICNS="$SCRIPT_DIR/RedLanSync.icns"
 ICON_GENERATOR="$SCRIPT_DIR/generate_app_icon.py"
 ICONSET="$RESOURCES/RedLanSync.iconset"
@@ -72,12 +74,24 @@ elif [[ -f "$ICON_GENERATOR" ]] && command -v python3 >/dev/null 2>&1 && [[ -x /
     rm -rf "$ICONSET"
 fi
 
-cat > "$EXECUTABLE" <<'EOF'
+cat > "$EXECUTABLE" <<EOF
+#!/bin/zsh
+APP_EXECUTABLE="\${0:A}"
+RESOURCES_DIR="\${APP_EXECUTABLE:h:h}/Resources"
+"\$RESOURCES_DIR/OpenDashboard.sh" --root "$ROOT_DIR"
+EOF
+
+if [[ -f "$LAUNCHER_SOURCE" ]]; then
+    cp "$LAUNCHER_SOURCE" "$LAUNCHER"
+else
+    cat > "$LAUNCHER" <<'EOF'
 #!/bin/zsh
 /usr/bin/open "http://127.0.0.1:8765"
 EOF
+fi
 
 chmod +x "$EXECUTABLE"
+chmod +x "$LAUNCHER"
 touch "$APP_DIR"
 
 if ! /usr/bin/defaults read com.apple.dock persistent-apps 2>/dev/null | /usr/bin/grep -q "Red LAN Sync.app"; then

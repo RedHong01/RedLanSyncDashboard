@@ -27,9 +27,9 @@ Do not commit:
 
 These files are ignored by default.
 
-Windows 的 `Red LAN Sync Dashboard` 启动器会读取本机 companion token，访问 Mac 控制端的 `/auth` 入口，并让浏览器保存一个 HttpOnly 会话 cookie。这个 cookie 只用于可信局域网内的网页操作授权；不要把带 token 的 URL 截图、转发或公开。
+Mac/Windows 的 `Red LAN Sync Dashboard` 启动器会读取本机配置中的 token，访问控制端的 `/auth` 入口，并让浏览器保存一个 HttpOnly 会话 cookie。这个 cookie 只用于可信局域网内的网页操作授权；不要把带 token 的 URL 截图、转发或公开。
 
-The Windows `Red LAN Sync Dashboard` launcher reads the local companion token, opens the Mac controller through `/auth`, and stores an HttpOnly browser session cookie. This cookie only authorizes dashboard actions on a trusted LAN; do not screenshot, forward, or publish token-bearing URLs.
+The Mac/Windows `Red LAN Sync Dashboard` launchers read the local configured token, open the controller through `/auth`, and store an HttpOnly browser session cookie. This cookie only authorizes dashboard actions on a trusted LAN; do not screenshot, forward, or publish token-bearing URLs.
 
 ## 报告安全问题 / Reporting Issues
 

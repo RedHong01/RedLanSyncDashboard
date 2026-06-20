@@ -31,12 +31,13 @@ Alternatively, use `File -> Add local repository` in GitHub Desktop and select t
 
 ## 网页客户端地址 / Web Client URL
 
-网页客户端是同一个 Mac 控制端页面，不会在 Windows companion agent 上另起一个独立控制台。Windows 日常入口应使用桌面或开始菜单里的 `Red LAN Sync Dashboard` 智能启动器；它会自动选择可用地址并建立可操作会话。
+网页客户端是同一个 Mac 控制端页面，不会在 Windows companion agent 上另起一个独立控制台。Mac 日常入口应使用 Dock 里的 `Red LAN Sync`，Windows 日常入口应使用桌面或开始菜单里的 `Red LAN Sync Dashboard`；两端启动器都会自动选择可用地址并建立可操作会话。
 
-The web client is the same Mac-hosted dashboard, not a separate dashboard served by the Windows companion agent. On Windows, use the desktop or Start Menu `Red LAN Sync Dashboard` smart launcher; it selects a reachable URL and opens an authenticated session.
+The web client is the same Mac-hosted dashboard, not a separate dashboard served by the Windows companion agent. On Mac, use the Dock `Red LAN Sync`; on Windows, use the desktop or Start Menu `Red LAN Sync Dashboard`; both launchers select a reachable URL and open an authenticated session.
 
 ```text
-Red LAN Sync Dashboard.lnk
+Mac: Red LAN Sync.app
+Windows: Red LAN Sync Dashboard.lnk
 ```
 
 如果需要手动输入，使用 Pairing 页面显示的 Mac 局域网地址，例如：

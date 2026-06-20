@@ -26,14 +26,14 @@ Red LAN Sync Dashboard is a local-first LAN control panel for a Mac/Windows Sync
 - Sends Wake-on-LAN packets when firmware and network settings support it.
 - 提供新电脑或 Android Syncthing 客户端的配对页面。
 - Provides a pairing page for new computers or Android Syncthing clients.
-- 在网页控制台和 macOS Dock 快捷方式中使用同一套应用图标，并支持从网页刷新 Dock 快捷方式。
-- Uses the same app icon in the web console and macOS Dock shortcut, with web actions to upload a custom icon and refresh the Dock shortcut.
+- Mac Dock 与 Windows 桌面/开始菜单使用同一类 `Red LAN Sync Dashboard` 智能启动器：自动测试本机、文字域名和局域网 IP，并打开可操作的网页管理端。
+- The Mac Dock and Windows desktop/Start Menu use the same kind of `Red LAN Sync Dashboard` smart launcher: it tests localhost, the friendly alias, and LAN IP fallbacks, then opens the authenticated dashboard.
 - 检查配置的 GitHub 仓库是否有新版本，并显示更新预览气泡。
 - Checks the configured GitHub repository for newer tool architecture releases and shows an update preview bubble.
 - 支持网页控制台中文/英文切换。
 - Switches the web UI between Chinese and English.
-- Windows installer 会创建 `Red LAN Sync Dashboard` 智能启动器：自动测试文字域名和 Mac 局域网 IP，并用配对 token 打开可操作的网页管理端。
-- The Windows installer creates a `Red LAN Sync Dashboard` smart launcher that tests the friendly alias and Mac LAN IP, then opens the authenticated web dashboard.
+- 在网页控制台和系统启动器中使用同一套应用图标，并支持从网页刷新 Mac Dock 启动器。
+- Uses the same app icon in the web console and system launchers, with web actions to refresh the Mac Dock launcher.
 
 ## 要求 / Requirements
 
@@ -63,9 +63,9 @@ python3 server.py
 http://127.0.0.1:8765
 ```
 
-Windows 安装 companion 后，直接点击桌面或开始菜单里的智能启动器。手动输入地址时可用 Mac 局域网 IP fallback：
+Windows 安装 companion 后，直接点击桌面或开始菜单里的智能启动器。Mac 和 Windows 都可以手动输入 Mac 局域网 IP fallback：
 
-After installing the Windows companion, click the smart launcher on the desktop or Start Menu. For manual entry, use the Mac LAN IP fallback:
+After installing the Windows companion, click the smart launcher on the desktop or Start Menu. On both Mac and Windows, use the Mac LAN IP fallback for manual entry:
 
 ```text
 http://192.168.0.243:8765
@@ -77,7 +77,7 @@ http://192.168.0.243:8765
 ./install-mac-service.sh
 ```
 
-可选 Dock 快捷方式 / Optional Dock shortcut:
+可选 Dock 智能启动器 / Optional Dock smart launcher:
 
 ```sh
 ./mac/install-dock-shortcut.sh

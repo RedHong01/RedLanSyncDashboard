@@ -21,7 +21,7 @@ python3 server.py
 
 Running the installer again updates the service code while preserving `config.json` and `runtime-state.json` in the installed directory.
 
-6. 可选 Dock 快捷方式。脚本会生成 macOS `.icns` 图标并刷新 Dock；如果网页中已上传 PNG/JPG 自定义图标，脚本会优先使用它。 / Optional Dock shortcut. The script generates the macOS `.icns` icon and refreshes the Dock; if a PNG/JPG custom icon was uploaded from the web UI, the script uses it first:
+6. 可选 Dock 智能启动器。脚本会生成 macOS `.app`，自动检测本机 dashboard、文字域名和局域网 fallback；它也会生成 `.icns` 图标并刷新 Dock，如果网页中已上传 PNG/JPG 自定义图标，脚本会优先使用它。 / Optional Dock smart launcher. The script creates a macOS `.app` that detects the local dashboard, friendly alias, and LAN fallbacks; it also generates the `.icns` icon and refreshes the Dock, preferring any PNG/JPG custom icon uploaded from the web UI:
 
 ```sh
 ./mac/install-dock-shortcut.sh
@@ -33,13 +33,13 @@ You can also click `Install/Refresh Dock Shortcut` on the dashboard `Pairing` pa
 
 ## 网页访问地址 / Web Dashboard URL
 
-控制台网页由 Mac 控制端提供。Mac 本机可以打开 `http://127.0.0.1:8765`。Windows companion installer 会安装 `OpenDashboard.ps1` 智能启动器，并创建桌面/开始菜单入口；启动器会依次测试 `red-lan-sync.local`、Mac 局域网 IP 和配置里的 fallback，找到可用地址后用 companion token 建立浏览器会话。
+控制台网页由 Mac 控制端提供。Mac 本机推荐使用 Dock 里的 `Red LAN Sync` 智能启动器，它会优先打开 `http://127.0.0.1:8765`，必要时尝试 `red-lan-sync.local` 和 Mac 局域网 IP fallback。Windows companion installer 会安装 `OpenDashboard.ps1` 智能启动器，并创建桌面/开始菜单入口；启动器会依次测试 `red-lan-sync.local`、Mac 局域网 IP 和配置里的 fallback，找到可用地址后用 companion token 建立浏览器会话。
 
-The dashboard is served by the Mac controller. The Mac itself can open `http://127.0.0.1:8765`. The Windows companion installer installs the `OpenDashboard.ps1` smart launcher and creates desktop/Start Menu entries; the launcher tests `red-lan-sync.local`, the Mac LAN IP, and configured fallbacks, then opens the reachable dashboard with the companion token.
+The dashboard is served by the Mac controller. On the Mac, prefer the Dock `Red LAN Sync` smart launcher; it opens `http://127.0.0.1:8765` first, then tries `red-lan-sync.local` and Mac LAN IP fallbacks if needed. The Windows companion installer installs the `OpenDashboard.ps1` smart launcher and creates desktop/Start Menu entries; the launcher tests `red-lan-sync.local`, the Mac LAN IP, and configured fallbacks, then opens the reachable dashboard with the companion token.
 
-如果 hosts 别名不可用，启动器会自动退回 Pairing 页面列出的 Mac 局域网地址，例如 `http://192.168.0.243:8765`。不要在 Windows 上使用 `http://127.0.0.1:8765`，因为它指向 Windows 自己。
+如果 hosts 别名不可用，双端启动器都会自动退回可用地址。手动输入时，Mac 本机可用 `http://127.0.0.1:8765`；Windows 或其他设备使用 Pairing 页面列出的 Mac 局域网地址，例如 `http://192.168.0.243:8765`。不要在 Windows 上使用 `http://127.0.0.1:8765`，因为它指向 Windows 自己。
 
-If the hosts alias is unavailable, the launcher automatically falls back to the Mac LAN URL listed on the Pairing page, such as `http://192.168.0.243:8765`. Do not use `http://127.0.0.1:8765` on Windows because it points back to Windows itself.
+If the hosts alias is unavailable, the launchers on both endpoints automatically fall back to reachable URLs. For manual entry, the Mac can use `http://127.0.0.1:8765`; Windows and other devices should use the Mac LAN URL listed on the Pairing page, such as `http://192.168.0.243:8765`. Do not use `http://127.0.0.1:8765` on Windows because it points back to Windows itself.
 
 如果 Windows 无法打开，请检查：
 

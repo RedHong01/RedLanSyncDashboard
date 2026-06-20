@@ -5,7 +5,8 @@ Red LAN Sync Dashboard 刻意保持小型、可本地部署、易审计。
 Red LAN Sync Dashboard is intentionally small, locally deployable, and easy to audit.
 
 ```text
-Mac browser UI
+Mac Dock launcher
+  -> mac/OpenDashboard.sh
   -> Python dashboard server on TCP 8765
     -> local Syncthing REST API on 127.0.0.1:8384
     -> Windows companion agent on TCP 8766
@@ -33,8 +34,10 @@ Windows browser
 - `runtime-assets/app-icon.*`: local custom icon uploaded from the web UI and ignored by Git; the Mac Dock installer prefers it when present.
 - `mac/generate_app_icon.py`：用 Python 标准库生成 macOS `.iconset` PNG 文件，供 `iconutil` 打包为 `.icns`。
 - `mac/generate_app_icon.py`: generates macOS `.iconset` PNG files with the Python standard library so `iconutil` can package them into `.icns`.
-- `mac/install-dock-shortcut.sh`：创建/刷新 macOS Dock `.app` 快捷方式，并写入同一套应用图标。
-- `mac/install-dock-shortcut.sh`: creates or refreshes the macOS Dock `.app` shortcut and applies the shared app icon.
+- `mac/OpenDashboard.sh`：macOS 智能启动器，自动检测本机控制台、文字域名和 Mac IP fallback，必要时 kickstart LaunchAgent。
+- `mac/OpenDashboard.sh`: macOS smart launcher that detects the local controller, friendly alias, and Mac IP fallback, and kickstarts the LaunchAgent when needed.
+- `mac/install-dock-shortcut.sh`：创建/刷新 macOS Dock `.app` 智能启动器，并写入同一套应用图标。
+- `mac/install-dock-shortcut.sh`: creates or refreshes the macOS Dock `.app` smart launcher and applies the shared app icon.
 - `windows/LanSyncAgent.ps1`：Windows companion service。
 - `windows/LanSyncAgent.ps1`: Windows companion service.
 - `windows/OpenDashboard.ps1`：Windows 智能启动器，自动测试文字域名和 Mac IP fallback，并用配对 token 打开可操作网页会话。
