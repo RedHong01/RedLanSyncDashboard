@@ -6,6 +6,68 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Set-DashboardHostsAlias {
+    param(
+        [Parameter(Mandatory = $true)][string]$Alias,
+        [Parameter(Mandatory = $true)][string]$IpAddress
+    )
+
+    if ($Alias -notmatch "^[A-Za-z0-9][A-Za-z0-9.-]*[A-Za-z0-9]$") {
+        throw "Dashboard alias is not a valid local hostname: $Alias"
+    }
+
+    $parsedIp = $null
+    if (-not [Net.IPAddress]::TryParse($IpAddress, [ref]$parsedIp)) {
+        throw "Dashboard alias needs a valid Mac IPv4 address, got: $IpAddress"
+    }
+    if ($parsedIp.AddressFamily -ne [Net.Sockets.AddressFamily]::InterNetwork) {
+        throw "Dashboard alias currently expects an IPv4 Mac address, got: $IpAddress"
+    }
+
+    $hostsPath = Join-Path $env:SystemRoot "System32\drivers\etc\hosts"
+    $startMarker = "# Red LAN Sync Dashboard alias start"
+    $endMarker = "# Red LAN Sync Dashboard alias end"
+    $lines = if (Test-Path -LiteralPath $hostsPath) {
+        @(Get-Content -LiteralPath $hostsPath)
+    }
+    else {
+        @()
+    }
+
+    $filtered = [System.Collections.Generic.List[string]]::new()
+    $insideManagedBlock = $false
+    foreach ($line in $lines) {
+        $trimmed = $line.Trim()
+        if ($trimmed -eq $startMarker) {
+            $insideManagedBlock = $true
+            continue
+        }
+        if ($trimmed -eq $endMarker) {
+            $insideManagedBlock = $false
+            continue
+        }
+        if ($insideManagedBlock) {
+            continue
+        }
+
+        $hostPart = ($line -split "#", 2)[0].Trim()
+        $parts = @($hostPart -split "\s+" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+        if ($parts.Count -gt 1 -and (@($parts[1..($parts.Count - 1)]) -contains $Alias)) {
+            continue
+        }
+        $filtered.Add($line)
+    }
+
+    if ($filtered.Count -gt 0 -and -not [string]::IsNullOrWhiteSpace($filtered[$filtered.Count - 1])) {
+        $filtered.Add("")
+    }
+    $filtered.Add($startMarker)
+    $filtered.Add("$IpAddress`t$Alias")
+    $filtered.Add($endMarker)
+    $filtered | Set-Content -LiteralPath $hostsPath -Encoding ASCII
+    return "$Alias -> $IpAddress"
+}
+
 $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
 $principal = [Security.Principal.WindowsPrincipal]::new($identity)
 if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
@@ -101,6 +163,20 @@ if (-not $taskInstalled) {
     Start-Process powershell.exe -WindowStyle Hidden -ArgumentList $arguments
 }
 
+$dashboardEntryUrl = ([string]$bundle.DashboardUrl).TrimEnd("/")
+$hostsAlias = ""
+if (-not [string]::IsNullOrWhiteSpace([string]$bundle.DashboardAliasUrl) -and
+    -not [string]::IsNullOrWhiteSpace([string]$bundle.DashboardAlias) -and
+    -not [string]::IsNullOrWhiteSpace([string]$bundle.MacIp)) {
+    try {
+        $hostsAlias = Set-DashboardHostsAlias -Alias ([string]$bundle.DashboardAlias) -IpAddress ([string]$bundle.MacIp)
+        $dashboardEntryUrl = ([string]$bundle.DashboardAliasUrl).TrimEnd("/")
+    }
+    catch {
+        Write-Warning "无法写入网页管理端文字域名，将继续使用 IP 地址快捷方式。错误：$($_.Exception.Message)"
+    }
+}
+
 $shortcutPath = Join-Path ([Environment]::GetFolderPath("Desktop")) "Wake RedM3Max.url"
 @"
 [InternetShortcut]
@@ -112,7 +188,7 @@ IconIndex=27
 $dashboardShortcutPath = Join-Path ([Environment]::GetFolderPath("Desktop")) "Red LAN Sync Dashboard.url"
 @"
 [InternetShortcut]
-URL=$($bundle.DashboardUrl)/
+URL=$dashboardEntryUrl/
 IconFile=%SystemRoot%\System32\shell32.dll
 IconIndex=13
 "@ | Set-Content -LiteralPath $dashboardShortcutPath -Encoding ASCII
@@ -126,6 +202,9 @@ Write-Host "Red LAN Sync Companion 已安装并启动。" -ForegroundColor Green
 Write-Host "安装目录: $InstallDir"
 Write-Host "监听端口: $($bundle.Port)"
 Write-Host "任务计划: $(if ($taskInstalled) { $taskName } else { '未创建，使用 Startup 兜底' })"
+if ($hostsAlias) {
+    Write-Host "网页管理域名: $hostsAlias"
+}
 if ($startupFallbackPath) {
     Write-Host "Startup 兜底: $startupFallbackPath"
 }

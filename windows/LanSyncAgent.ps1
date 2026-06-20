@@ -75,7 +75,44 @@ function Write-HtmlResponse {
     $Context.Response.OutputStream.Close()
 }
 
+function Write-RedirectResponse {
+    param(
+        [Parameter(Mandatory = $true)]$Context,
+        [Parameter(Mandatory = $true)][string]$Location
+    )
+
+    $bytes = [Text.Encoding]::UTF8.GetBytes("Redirecting to $Location")
+    $Context.Response.StatusCode = 302
+    $Context.Response.RedirectLocation = $Location
+    $Context.Response.ContentType = "text/plain; charset=utf-8"
+    $Context.Response.ContentLength64 = $bytes.Length
+    $Context.Response.OutputStream.Write($bytes, 0, $bytes.Length)
+    $Context.Response.OutputStream.Close()
+}
+
+function Get-DashboardEntryUrl {
+    $aliasUrl = [string]$script:Config.DashboardAliasUrl
+    if (-not [string]::IsNullOrWhiteSpace($aliasUrl) -and (Test-UrlHostResolvable -Url $aliasUrl)) {
+        return $aliasUrl.TrimEnd("/")
+    }
+    return ([string]$script:Config.DashboardUrl).TrimEnd("/")
+}
+
+function Test-UrlHostResolvable {
+    param([Parameter(Mandatory = $true)][string]$Url)
+
+    try {
+        $uri = [Uri]$Url
+        [void][Net.Dns]::GetHostAddresses($uri.Host)
+        return $true
+    }
+    catch {
+        return $false
+    }
+}
+
 function Get-LocalWakePage {
+    $dashboardUrl = Get-DashboardEntryUrl
     return @"
 <!doctype html>
 <html lang="zh-CN">
@@ -84,7 +121,7 @@ function Get-LocalWakePage {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Red5090 Companion</title>
 <style>
-*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f3f6f6;color:#172328;font-family:Segoe UI,sans-serif}.panel{width:min(420px,calc(100vw - 32px));padding:24px;border:1px solid #d7dfe1;border-radius:7px;background:#fff}.eyebrow{margin:0;color:#087c8c;font-size:11px;font-weight:800}h1{margin:6px 0 22px;font-size:22px}.status{display:flex;justify-content:space-between;padding:13px 0;border-top:1px solid #e1e6e7;font-size:13px}.status span{color:#657278}button{width:100%;height:42px;margin-top:18px;border:1px solid #a45d00;border-radius:5px;background:#fff2dc;color:#704100;font-weight:700;cursor:pointer}button:disabled{opacity:.5}#message{min-height:18px;margin:12px 0 0;color:#087f5b;font-size:12px}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f3f6f6;color:#172328;font-family:Segoe UI,sans-serif}.panel{width:min(420px,calc(100vw - 32px));padding:24px;border:1px solid #d7dfe1;border-radius:7px;background:#fff}.eyebrow{margin:0;color:#087c8c;font-size:11px;font-weight:800}h1{margin:6px 0 22px;font-size:22px}.status{display:flex;justify-content:space-between;padding:13px 0;border-top:1px solid #e1e6e7;font-size:13px}.status span{color:#657278}.dashboard{display:flex;align-items:center;justify-content:center;width:100%;height:42px;margin-top:18px;border:1px solid #087c8c;border-radius:5px;background:#eefbfd;color:#075c68;font-weight:700;text-decoration:none}button{width:100%;height:42px;margin-top:10px;border:1px solid #a45d00;border-radius:5px;background:#fff2dc;color:#704100;font-weight:700;cursor:pointer}button:disabled{opacity:.5}#message{min-height:18px;margin:12px 0 0;color:#087f5b;font-size:12px}
 </style>
 </head>
 <body>
@@ -93,6 +130,8 @@ function Get-LocalWakePage {
 <h1>Red5090 / RedM3Max</h1>
 <div class="status"><span>本机代理</span><strong>在线</strong></div>
 <div class="status"><span>Mac 地址</span><strong>$($script:Config.MacIp)</strong></div>
+<div class="status"><span>网页入口</span><strong>$dashboardUrl</strong></div>
+<a class="dashboard" href="/dashboard">打开网页管理端</a>
 <button id="wake" type="button">唤醒 RedM3Max</button>
 <p id="message"></p>
 </main>
@@ -326,6 +365,11 @@ function Handle-Request {
 
         if ($method -eq "GET" -and $path -eq "/" -and $isLoopback) {
             Write-HtmlResponse -Context $Context -Html (Get-LocalWakePage)
+            return
+        }
+
+        if ($method -eq "GET" -and $path -in @("/dashboard", "/dashboard/") -and $isLoopback) {
+            Write-RedirectResponse -Context $Context -Location ((Get-DashboardEntryUrl) + "/")
             return
         }
 

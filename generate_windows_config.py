@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-from server import load_config
+from server import dashboard_alias, load_config
 
 
 APP_DIR = Path(__file__).resolve().parent
@@ -11,8 +11,11 @@ OUTPUT = APP_DIR / "windows" / "agent-config.generated.json"
 
 def main():
     config = load_config()
+    alias = dashboard_alias(config)
     payload = {
         "DashboardUrl": "http://{}:{}".format(config["mac_ip"], config["listen_port"]),
+        "DashboardAlias": alias,
+        "DashboardAliasUrl": "http://{}:{}".format(alias, config["listen_port"]) if alias else "",
         "Token": config["shared_token"],
         "Port": config["remote_agent_port"],
         "ProjectBase": config["remote_project_base"],

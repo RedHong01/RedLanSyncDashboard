@@ -11,6 +11,9 @@ Mac browser UI
     -> Windows companion agent on TCP 8766
       -> Windows Syncthing REST API
       -> Windows disk and power APIs
+Windows browser
+  -> red-lan-sync.local hosts alias
+  -> Mac dashboard server on TCP 8765
 ```
 
 ## 组件 / Components
@@ -37,6 +40,8 @@ Mac browser UI
 - `windows/DependencyScan.ps1`: Windows font, Adobe app, and plugin inventory functions shared by the companion API and standalone check script.
 - `windows/install-agent.ps1`：Windows 安装器、防火墙规则、计划任务和桌面唤醒快捷方式。
 - `windows/install-agent.ps1`: Windows installer, firewall rule, scheduled task, and desktop wake shortcut.
+- `windows/install-agent.ps1` 还会把 `dashboard_alias` 映射到 Mac IP，并生成文字域名网页管理快捷方式。
+- `windows/install-agent.ps1` also maps `dashboard_alias` to the Mac IP and creates the friendly-domain dashboard shortcut.
 - `generate_windows_config.py`：生成带 token 的 Windows companion 配置。
 - `generate_windows_config.py`: writes the tokenized Windows companion config.
 
@@ -52,8 +57,8 @@ Mac browser UI
 - The dashboard is designed for trusted LAN use, not public internet exposure.
 - Syncthing 仍然是文件同步引擎；本项目负责设置编排、可视化和工程卫生检查。
 - Syncthing remains the file synchronization engine; this project orchestrates setup, visibility, and project hygiene.
-- 网页客户端由 Mac 控制端提供；其他设备打开同一个局域网 URL。`127.0.0.1` 只代表当前正在使用的那台电脑。
-- The web client is served by the Mac controller; other devices open the same LAN URL. `127.0.0.1` only means the computer currently using it.
+- 网页客户端由 Mac 控制端提供；其他设备可以使用 hosts 别名 `red-lan-sync.local` 或 Mac 局域网 IP。`127.0.0.1` 只代表当前正在使用的那台电脑。
+- The web client is served by the Mac controller; other devices can use the hosts alias `red-lan-sync.local` or the Mac LAN IP. `127.0.0.1` only means the computer currently using it.
 
 ## 工程安全 / Project Safety
 

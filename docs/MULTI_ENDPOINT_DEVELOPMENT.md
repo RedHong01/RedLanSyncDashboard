@@ -31,9 +31,17 @@ Alternatively, use `File -> Add local repository` in GitHub Desktop and select t
 
 ## 网页客户端地址 / Web Client URL
 
-网页客户端是同一个 Mac 控制端页面，不会在 Windows companion agent 上另起一个网页域名。Windows 浏览器要打开 Pairing 页面显示的局域网地址，例如：
+网页客户端是同一个 Mac 控制端页面，不会在 Windows companion agent 上另起一个独立控制台。Windows companion installer 会把工具名别名写入 hosts，因此日常入口是：
 
-The web client is the same Mac-hosted dashboard, not a separate web domain served by the Windows companion agent. A Windows browser should open the LAN URL shown on the Pairing page, for example:
+The web client is the same Mac-hosted dashboard, not a separate dashboard served by the Windows companion agent. The Windows companion installer writes the tool-name alias into hosts, so the daily entry point is:
+
+```text
+http://red-lan-sync.local:8765
+```
+
+如果别名不可用，Windows 浏览器打开 Pairing 页面显示的 Mac 局域网地址，例如：
+
+If the alias is unavailable, open the Mac LAN URL shown on the Pairing page, for example:
 
 ```text
 http://192.168.0.243:8765
@@ -42,6 +50,10 @@ http://192.168.0.243:8765
 `http://127.0.0.1:8765` 只适用于正在运行控制台的那台电脑；在 Windows 上它会指向 Windows 自己。
 
 `http://127.0.0.1:8765` only works on the computer running the dashboard; on Windows it points back to Windows itself.
+
+Windows 本机 companion 页面仍然在 `http://127.0.0.1:8766`，只负责唤醒、状态和跳转；其中的 `打开网页管理端` 按钮会重定向到当前配置的 dashboard URL。
+
+The Windows local companion page remains at `http://127.0.0.1:8766` for wake, status, and redirect helpers only; its `Open Dashboard` button redirects to the configured dashboard URL.
 
 ## 换行和文件类型 / Line Endings and File Types
 

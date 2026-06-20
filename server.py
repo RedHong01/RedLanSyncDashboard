@@ -44,6 +44,7 @@ ICON_UPLOAD_TYPES = {
 DEFAULT_CONFIG = {
     "listen_host": "0.0.0.0",
     "listen_port": 8765,
+    "dashboard_alias": "red-lan-sync.local",
     "local_name": "MacWorkstation",
     "remote_name": "WindowsWorkstation",
     "remote_ip": "",
@@ -102,6 +103,7 @@ def update_config(patch):
         allowed = {
             "local_name",
             "remote_name",
+            "dashboard_alias",
             "remote_ip",
             "remote_mac",
             "remote_agent_port",
@@ -124,8 +126,21 @@ def update_config(patch):
         return config
 
 
+def dashboard_alias(config):
+    value = str(config.get("dashboard_alias") or "").strip().lower()
+    value = re.sub(r"^https?://", "", value).split("/", 1)[0].split(":", 1)[0]
+    if not value or value == "localhost" or value.startswith("127."):
+        return ""
+    if not re.fullmatch(r"[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]", value):
+        return ""
+    return value
+
+
 def dashboard_urls(config):
     urls = ["http://127.0.0.1:{}".format(config["listen_port"])]
+    alias = dashboard_alias(config)
+    if alias:
+        urls.append("http://{}:{}".format(alias, config["listen_port"]))
     urls.extend(
         "http://{}:{}".format(address, config["listen_port"])
         for address in local_ip_candidates(config)
@@ -1426,6 +1441,9 @@ def main():
     port = args.port or int(config["listen_port"])
     server = ThreadingHTTPServer((host, port), Handler)
     print("LAN Sync Dashboard: http://127.0.0.1:{}".format(port), flush=True)
+    alias = dashboard_alias(config)
+    if alias:
+        print("Friendly alias: http://{}:{}".format(alias, port), flush=True)
     print("LAN address: http://{}:{}".format(config["mac_ip"], port), flush=True)
     try:
         server.serve_forever()

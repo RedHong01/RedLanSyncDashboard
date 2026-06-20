@@ -33,9 +33,13 @@ You can also click `Install/Refresh Dock Shortcut` on the dashboard `Pairing` pa
 
 ## 网页访问地址 / Web Dashboard URL
 
-控制台网页由 Mac 控制端提供。Mac 本机可以打开 `http://127.0.0.1:8765`，Windows 或其他设备必须打开 Pairing 页面列出的局域网地址，例如 `http://192.168.0.243:8765`。
+控制台网页由 Mac 控制端提供。Mac 本机可以打开 `http://127.0.0.1:8765`。Windows companion installer 会读取配对配置中的 `dashboard_alias`，默认把 `red-lan-sync.local` 写入 Windows hosts，并把桌面快捷方式指向 `http://red-lan-sync.local:8765`。
 
-The dashboard is served by the Mac controller. The Mac itself can open `http://127.0.0.1:8765`; Windows and other devices must open the LAN URL listed on the Pairing page, such as `http://192.168.0.243:8765`.
+The dashboard is served by the Mac controller. The Mac itself can open `http://127.0.0.1:8765`. The Windows companion installer reads `dashboard_alias` from the pairing config, writes the default `red-lan-sync.local` into Windows hosts, and points the desktop shortcut to `http://red-lan-sync.local:8765`.
+
+如果 hosts 别名不可用，继续使用 Pairing 页面列出的 Mac 局域网地址，例如 `http://192.168.0.243:8765`。不要在 Windows 上使用 `http://127.0.0.1:8765`，因为它指向 Windows 自己。
+
+If the hosts alias is unavailable, use the Mac LAN URL listed on the Pairing page, such as `http://192.168.0.243:8765`. Do not use `http://127.0.0.1:8765` on Windows because it points back to Windows itself.
 
 如果 Windows 无法打开，请检查：
 
@@ -47,6 +51,8 @@ If Windows cannot open it, check:
 - The Mac firewall allows inbound TCP 8765.
 - Windows 与 Mac 在同一个局域网内。
 - Windows and Mac are on the same LAN.
+- `C:\Windows\System32\drivers\etc\hosts` 中存在 `red-lan-sync.local` 到 Mac IP 的映射；如果 Mac IP 变化，重新运行 `python3 generate_windows_config.py` 并重跑 Windows installer。
+- `C:\Windows\System32\drivers\etc\hosts` contains the `red-lan-sync.local` to Mac IP mapping; if the Mac IP changes, rerun `python3 generate_windows_config.py` and then rerun the Windows installer.
 
 ## Windows 节点 / Windows Node
 
@@ -65,6 +71,10 @@ powershell -ExecutionPolicy Bypass -File .\install-agent.ps1
 ```
 
 5. 确认 Windows 防火墙允许 TCP 8766 和 Syncthing 端口。 / Confirm Windows firewall allows TCP 8766 and Syncthing ports.
+
+安装脚本会创建两个入口：`Red LAN Sync Dashboard.url` 打开 Mac 控制台文字域名，`Wake RedM3Max.url` 打开本机 companion 页面；本机 companion 页面也提供一个跳转按钮，可根据当前配置打开网页管理端。
+
+The installer creates two entries: `Red LAN Sync Dashboard.url` opens the Mac dashboard through the friendly alias, and `Wake RedM3Max.url` opens the local companion page; that local page also includes a button that redirects to the configured dashboard.
 
 ## 旧同步续传到 D 盘 / Resume Old Sync on the D Drive
 

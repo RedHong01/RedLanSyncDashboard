@@ -1,6 +1,7 @@
 {
   "listen_host": "0.0.0.0",
   "listen_port": 8765,
+  "dashboard_alias": "red-lan-sync.local",
   "local_name": "MacWorkstation",
   "remote_name": "WindowsWorkstation",
   "remote_ip": "192.168.0.50",

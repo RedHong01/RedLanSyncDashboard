@@ -32,8 +32,8 @@ Red LAN Sync Dashboard is a local-first LAN control panel for a Mac/Windows Sync
 - Checks the configured GitHub repository for newer tool architecture releases and shows an update preview bubble.
 - 支持网页控制台中文/英文切换。
 - Switches the web UI between Chinese and English.
-- Windows、Mac 和手机浏览器打开的是同一个 Mac 控制端网页；Windows 端使用局域网地址，例如 `http://192.168.0.243:8765`。
-- Windows, Mac, and phone browsers use the same Mac-hosted dashboard; Windows should open the LAN URL, for example `http://192.168.0.243:8765`.
+- Windows installer 会把默认文字入口 `http://red-lan-sync.local:8765` 写入 hosts 和桌面快捷方式，同时保留 Mac 局域网 IP fallback。
+- The Windows installer writes the default friendly entry `http://red-lan-sync.local:8765` into hosts and desktop shortcuts while keeping the Mac LAN IP fallback.
 
 ## 要求 / Requirements
 
@@ -61,6 +61,12 @@ python3 server.py
 
 ```text
 http://127.0.0.1:8765
+```
+
+Windows 安装 companion 后默认打开 / After installing the Windows companion, open:
+
+```text
+http://red-lan-sync.local:8765
 ```
 
 安装为登录后自动启动服务 / Install as a login service:
