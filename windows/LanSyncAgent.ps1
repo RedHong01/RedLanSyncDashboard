@@ -12,6 +12,11 @@ $script:ConfigPath = (Resolve-Path -LiteralPath $ConfigPath).Path
 $script:Config = Get-Content -LiteralPath $script:ConfigPath -Raw | ConvertFrom-Json
 $script:LastHeartbeat = [DateTime]::MinValue
 
+$dependencyScanner = Join-Path $PSScriptRoot "DependencyScan.ps1"
+if (Test-Path -LiteralPath $dependencyScanner) {
+    . $dependencyScanner
+}
+
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;
@@ -222,6 +227,11 @@ function Invoke-Syncthing {
     return Invoke-RestMethod -Uri $uri -Method $Method -Headers $headers -ContentType "application/json" -Body ($Body | ConvertTo-Json -Depth 30) -TimeoutSec 10
 }
 
+function Normalize-WindowsProjectPath {
+    param([Parameter(Mandatory = $true)][string]$Path)
+    return [IO.Path]::GetFullPath($Path).TrimEnd([IO.Path]::DirectorySeparatorChar).ToLowerInvariant()
+}
+
 function Register-SyncthingFolder {
     param([Parameter(Mandatory = $true)]$Payload)
 
@@ -237,8 +247,17 @@ function Register-SyncthingFolder {
     New-Item -ItemType Directory -Path $path -Force | Out-Null
 
     $existing = @(Invoke-Syncthing -Path "/rest/config/folders")
-    if ($existing | Where-Object { $_.id -eq $folderId }) {
-        throw "Syncthing folder ID already exists on Windows"
+    $matching = $existing | Where-Object { $_.id -eq $folderId } | Select-Object -First 1
+    if ($matching) {
+        if ((Normalize-WindowsProjectPath -Path ([string]$matching.path)) -ne (Normalize-WindowsProjectPath -Path $path)) {
+            throw "Syncthing folder ID already exists on Windows with a different path: $($matching.path)"
+        }
+        return @{
+            ok = $true
+            existing = $true
+            folder_id = $folderId
+            path = [string]$matching.path
+        }
     }
 
     $folder = Invoke-Syncthing -Path "/rest/config/defaults/folder"
@@ -263,6 +282,7 @@ function Register-SyncthingFolder {
 
     return @{
         ok = $true
+        existing = $false
         folder_id = $folderId
         path = $path
     }
@@ -316,6 +336,14 @@ function Handle-Request {
 
         if ($method -eq "GET" -and $path -eq "/api/agent/status") {
             Write-JsonResponse -Context $Context -Value (Get-AgentStatus)
+            return
+        }
+
+        if ($method -eq "GET" -and $path -eq "/api/agent/dependencies") {
+            if (-not (Get-Command Get-LanSyncDependencyInventory -ErrorAction SilentlyContinue)) {
+                throw "Dependency scanner is not installed"
+            }
+            Write-JsonResponse -Context $Context -Value (Get-LanSyncDependencyInventory)
             return
         }
 

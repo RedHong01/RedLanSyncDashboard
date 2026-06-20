@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
+import hashlib
 import json
 import mimetypes
 import os
@@ -12,6 +15,7 @@ import secrets
 import shutil
 import socket
 import subprocess
+import tempfile
 import threading
 import time
 import urllib.error
@@ -21,14 +25,21 @@ import uuid
 import xml.etree.ElementTree as ET
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+from dependency_auditor import audit_project_dependencies, endpoint_inventory
 from project_packager import DEFAULT_EXCLUDES, Planner, copy_tree, write_reports
 
 
 APP_DIR = Path(__file__).resolve().parent
 STATIC_DIR = APP_DIR / "static"
+RUNTIME_ASSET_DIR = APP_DIR / "runtime-assets"
+CUSTOM_ICON_META_PATH = RUNTIME_ASSET_DIR / "app-icon.json"
 CONFIG_PATH = APP_DIR / "config.json"
 STATE_PATH = APP_DIR / "runtime-state.json"
 APP_VERSION = "0.1.1"
+ICON_UPLOAD_TYPES = {
+    "image/png": ("png", b"\x89PNG\r\n\x1a\n"),
+    "image/jpeg": ("jpg", b"\xff\xd8"),
+}
 
 DEFAULT_CONFIG = {
     "listen_host": "0.0.0.0",
@@ -113,8 +124,95 @@ def update_config(patch):
         return config
 
 
+def dashboard_urls(config):
+    urls = ["http://127.0.0.1:{}".format(config["listen_port"])]
+    urls.extend(
+        "http://{}:{}".format(address, config["listen_port"])
+        for address in local_ip_candidates(config)
+    )
+    return list(dict.fromkeys(urls))
+
+
 def public_config(config):
-    return {key: value for key, value in config.items() if key != "shared_token"}
+    value = {key: item for key, item in config.items() if key != "shared_token"}
+    value["dashboard_urls"] = dashboard_urls(config)
+    value["icon"] = current_icon_info()
+    return value
+
+
+def load_custom_icon_meta():
+    try:
+        return json.loads(CUSTOM_ICON_META_PATH.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return {}
+
+
+def current_icon_info():
+    meta = load_custom_icon_meta()
+    filename = meta.get("filename", "")
+    if filename:
+        candidate = (RUNTIME_ASSET_DIR / filename).resolve()
+        try:
+            if RUNTIME_ASSET_DIR.resolve() in candidate.parents and candidate.is_file():
+                return {
+                    "path": "/runtime-icon/{}?v={}".format(filename, int(candidate.stat().st_mtime)),
+                    "custom": True,
+                    "mime": meta.get("mime", mimetypes.guess_type(filename)[0] or "application/octet-stream"),
+                    "name": meta.get("name", filename),
+                    "updated_at": meta.get("updated_at", ""),
+                }
+        except OSError:
+            pass
+    return {
+        "path": "/app-icon.svg",
+        "custom": False,
+        "mime": "image/svg+xml",
+        "name": "Red LAN Sync",
+        "updated_at": "",
+    }
+
+
+def upload_custom_icon(payload):
+    data_url = str(payload.get("data_url") or "")
+    if "," not in data_url or ";base64" not in data_url.split(",", 1)[0]:
+        raise ValueError("Icon upload must be a base64 data URL")
+    header, encoded = data_url.split(",", 1)
+    mime = header.removeprefix("data:").split(";", 1)[0].lower()
+    if mime not in ICON_UPLOAD_TYPES:
+        raise ValueError("Icon must be a PNG or JPG image")
+    extension, signature = ICON_UPLOAD_TYPES[mime]
+    try:
+        raw = base64.b64decode(encoded, validate=True)
+    except (binascii.Error, ValueError) as exc:
+        raise ValueError("Icon data is not valid base64") from exc
+    if len(raw) > 3 * 1024 * 1024:
+        raise ValueError("Icon file is too large; keep it under 3 MB")
+    if not raw.startswith(signature):
+        raise ValueError("Icon file content does not match its image type")
+
+    RUNTIME_ASSET_DIR.mkdir(parents=True, exist_ok=True)
+    for existing in RUNTIME_ASSET_DIR.glob("app-icon.*"):
+        if existing.name != "app-icon.json":
+            existing.unlink(missing_ok=True)
+    filename = "app-icon.{}".format(extension)
+    (RUNTIME_ASSET_DIR / filename).write_bytes(raw)
+    save_json(
+        CUSTOM_ICON_META_PATH,
+        {
+            "filename": filename,
+            "mime": mime,
+            "name": str(payload.get("name") or filename),
+            "bytes": len(raw),
+            "updated_at": now_iso(),
+        },
+    )
+    return {"ok": True, "icon": current_icon_info()}
+
+
+def reset_custom_icon():
+    for existing in RUNTIME_ASSET_DIR.glob("app-icon.*"):
+        existing.unlink(missing_ok=True)
+    return {"ok": True, "icon": current_icon_info()}
 
 
 def load_state():
@@ -530,14 +628,16 @@ def validate_project_paths(source, destination):
     return source_path, dest_path
 
 
-def audit_project(payload):
+def build_project_planner(payload):
     source = Path(payload.get("source", "")).expanduser().resolve()
     if not source.is_dir():
         raise ValueError("Source folder does not exist")
+    if source.anchor and source == Path(source.anchor):
+        raise ValueError("Refusing to process filesystem root")
     proposed = payload.get("destination") or str(source.parent / (source.name + "_cross_platform"))
     destination = Path(proposed).expanduser().resolve()
     if destination.exists():
-        destination = Path("/tmp") / ("lan_sync_audit_" + uuid.uuid4().hex)
+        destination = Path(tempfile.gettempdir()) / ("lan_sync_audit_" + uuid.uuid4().hex)
     planner = Planner(
         source,
         destination,
@@ -546,12 +646,17 @@ def audit_project(payload):
         int(payload.get("max_segment_len", 140)),
     )
     planner.build()
+    return planner, proposed
+
+
+def audit_project(payload):
+    planner, proposed = build_project_planner(payload)
     reason_counts = {}
     for item in planner.renames:
         for reason in item["reasons"]:
             reason_counts[reason] = reason_counts.get(reason, 0) + 1
     return {
-        "source": str(source),
+        "source": str(planner.source),
         "suggested_destination": proposed,
         "total_entries": len(planner.entries),
         "renamed_entries": len(planner.renames),
@@ -567,6 +672,175 @@ def audit_project(payload):
             for item in planner.renames[:100]
         ],
     }
+
+
+def rel_parent(value):
+    return value.rsplit("/", 1)[0] if "/" in value else ""
+
+
+def rel_name(value):
+    return value.rsplit("/", 1)[-1]
+
+
+def relative_path_from_posix(value):
+    if not value:
+        return Path()
+    return Path(*[part for part in value.split("/") if part])
+
+
+def fs_key(path):
+    return os.path.normcase(os.path.abspath(str(path)))
+
+
+def source_rename_operations(planner):
+    operations = []
+    for item in planner.renames:
+        parent_dest = rel_parent(item["dest_rel"])
+        operations.append(
+            {
+                "type": item["type"],
+                "source_rel": item["source_rel"],
+                "dest_rel": item["dest_rel"],
+                "parent_dest": parent_dest,
+                "source_name": rel_name(item["source_rel"]),
+                "target_name": rel_name(item["dest_rel"]),
+                "reasons": item["reasons"],
+            }
+        )
+    return operations
+
+
+def source_rename_plan_hash(planner, operations):
+    material = {
+        "source": str(planner.source),
+        "replace_spaces": planner.replace_spaces,
+        "max_segment_len": planner.max_segment_len,
+        "operations": operations,
+    }
+    encoded = json.dumps(material, ensure_ascii=False, sort_keys=True).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def source_rename_preview(payload):
+    planner, _proposed = build_project_planner(payload)
+    operations = source_rename_operations(planner)
+    try:
+        preview_limit = int(payload.get("limit", 500))
+    except (TypeError, ValueError):
+        preview_limit = 500
+    preview_limit = max(1, min(2000, preview_limit))
+    return {
+        "source": str(planner.source),
+        "plan_hash": source_rename_plan_hash(planner, operations),
+        "operation_count": len(operations),
+        "collision_count": len(planner.collisions),
+        "truncated": len(operations) > preview_limit,
+        "preview_limit": preview_limit,
+        "operations": operations[:preview_limit],
+    }
+
+
+def apply_source_rename_operations(source, operations):
+    grouped = {}
+    for operation in operations:
+        grouped.setdefault(operation["parent_dest"], []).append(operation)
+
+    applied = []
+    for parent in sorted(grouped, key=lambda value: len(value.split("/")) if value else 0):
+        parent_dir = source / relative_path_from_posix(parent)
+        if not parent_dir.is_dir():
+            raise ValueError("Planned parent folder is missing: {}".format(parent or "."))
+
+        prepared = []
+        planned_sources = set()
+        for operation in grouped[parent]:
+            source_path = parent_dir / operation["source_name"]
+            target_path = parent_dir / operation["target_name"]
+            if fs_key(source_path) == fs_key(target_path):
+                continue
+            if not source_path.exists():
+                raise ValueError("Planned source path is missing; preview again: {}".format(operation["source_rel"]))
+            planned_sources.add(fs_key(source_path))
+            prepared.append((operation, source_path, target_path))
+
+        for operation, _source_path, target_path in prepared:
+            if target_path.exists() and fs_key(target_path) not in planned_sources:
+                raise ValueError("Target path already exists; cannot rename safely: {}".format(operation["dest_rel"]))
+
+        staged = []
+        try:
+            for index, (operation, source_path, target_path) in enumerate(prepared, start=1):
+                temp_path = parent_dir / ".lan-sync-rename-{}-{}".format(uuid.uuid4().hex, index)
+                while temp_path.exists():
+                    temp_path = parent_dir / ".lan-sync-rename-{}-{}".format(uuid.uuid4().hex, index)
+                source_path.rename(temp_path)
+                staged.append((operation, temp_path, source_path, target_path))
+
+            for operation, temp_path, source_path, target_path in staged:
+                if target_path.exists():
+                    raise ValueError("Target path appeared during rename: {}".format(operation["dest_rel"]))
+                temp_path.rename(target_path)
+                applied.append(
+                    {
+                        "type": operation["type"],
+                        "source_rel": operation["source_rel"],
+                        "dest_rel": operation["dest_rel"],
+                        "source_abs": str(source_path),
+                        "dest_abs": str(target_path),
+                        "reasons": operation["reasons"],
+                    }
+                )
+        except Exception:
+            for _operation, temp_path, source_path, _target_path in reversed(staged):
+                if temp_path.exists() and not source_path.exists():
+                    temp_path.rename(source_path)
+            raise
+
+    return applied
+
+
+def apply_source_renames(payload):
+    if not payload.get("confirm"):
+        raise ValueError("Source rename confirmation is required")
+    planner, _proposed = build_project_planner(payload)
+    operations = source_rename_operations(planner)
+    expected_hash = source_rename_plan_hash(planner, operations)
+    if payload.get("plan_hash") != expected_hash:
+        raise ValueError("Rename plan changed; preview again before applying")
+    applied = apply_source_rename_operations(planner.source, operations) if operations else []
+    verify_planner, _verify_proposed = build_project_planner(payload)
+    remaining = len(source_rename_operations(verify_planner))
+    return {
+        "ok": True,
+        "source": str(planner.source),
+        "plan_hash": expected_hash,
+        "applied_count": len(applied),
+        "remaining_count": remaining,
+        "operations": applied[:500],
+        "truncated": len(applied) > 500,
+    }
+
+
+def dependency_audit(payload):
+    source = Path(payload.get("source", "")).expanduser().resolve()
+    remote_inventory = None
+    remote_error = ""
+    if payload.get("compare_remote", True):
+        try:
+            remote_inventory = remote_agent_request("/api/agent/dependencies", timeout=25)
+        except Exception as exc:
+            remote_error = str(exc)
+    bundle_dir = None
+    if payload.get("bundle_dir"):
+        bundle_dir = Path(payload["bundle_dir"]).expanduser().resolve()
+    result = audit_project_dependencies(
+        source,
+        package=bool(payload.get("package", False)),
+        bundle_dir=bundle_dir,
+        remote_inventory=remote_inventory,
+    )
+    result["remote_error"] = remote_error
+    return result
 
 
 def job_list():
@@ -656,12 +930,36 @@ def run_normalize_job(job_id, payload):
         )
 
 
-def register_local_syncthing_folder(folder_id, label, path):
-    config = load_config()
+def normalized_compare_path(value):
+    try:
+        return os.path.normcase(os.path.abspath(os.path.expanduser(str(value or ""))))
+    except (OSError, TypeError, ValueError):
+        return str(value or "").strip()
+
+
+def folder_path_matches(existing_path, expected_path):
+    return normalized_compare_path(existing_path) == normalized_compare_path(expected_path)
+
+
+def ensure_local_folder_conflict_free(folder_id, path):
     existing = syncthing_request("/rest/config/folders")
     for folder in existing:
-        if folder.get("id") == folder_id:
-            raise ValueError("Syncthing folder ID already exists locally")
+        if folder.get("id") != folder_id:
+            continue
+        if not folder_path_matches(folder.get("path", ""), path):
+            raise ValueError(
+                "Syncthing folder ID already exists locally with a different path: {}".format(folder.get("path", ""))
+            )
+        return folder
+    return None
+
+
+def register_local_syncthing_folder(folder_id, label, path):
+    config = load_config()
+    existing_folder = ensure_local_folder_conflict_free(folder_id, path)
+    if existing_folder:
+        return {"ok": True, "existing": True, "folder_id": folder_id, "path": existing_folder.get("path", path)}
+
     default_folder = syncthing_request("/rest/config/defaults/folder")
     default_folder.update(
         {
@@ -676,13 +974,8 @@ def register_local_syncthing_folder(folder_id, label, path):
             ],
         }
     )
-    return syncthing_request("/rest/config/folders", "POST", default_folder)
-
-
-def ensure_local_folder_id_available(folder_id):
-    existing = syncthing_request("/rest/config/folders")
-    if any(folder.get("id") == folder_id for folder in existing):
-        raise ValueError("Syncthing folder ID already exists locally")
+    syncthing_request("/rest/config/folders", "POST", default_folder)
+    return {"ok": True, "existing": False, "folder_id": folder_id, "path": path}
 
 
 def register_project(payload):
@@ -696,7 +989,7 @@ def register_project(payload):
     remote_path = payload.get("remote_path", "")
     if not remote_path:
         raise ValueError("Remote target path is required")
-    ensure_local_folder_id_available(folder_id)
+    ensure_local_folder_conflict_free(folder_id, str(local_path))
     remote_payload = {
         "folder_id": folder_id,
         "label": label,
@@ -734,18 +1027,14 @@ def pairing_info():
     except Exception as exc:
         syncthing_error = str(exc)
 
-    dashboard_urls = ["http://127.0.0.1:{}".format(config["listen_port"])]
-    dashboard_urls.extend(
-        "http://{}:{}".format(address, config["listen_port"])
-        for address in local_ip_candidates(config)
-    )
-    dashboard_urls = list(dict.fromkeys(dashboard_urls))
+    urls = dashboard_urls(config)
     windows_tool_path = str(Path(config["sync_root"]) / "_tools" / "LanSyncDashboardWindows")
     dock_app_path = str(Path.home() / "Applications" / "Red LAN Sync.app")
+    icon = current_icon_info()
     return {
         "controller": {
             "name": config["local_name"],
-            "dashboard_urls": dashboard_urls,
+            "dashboard_urls": urls,
             "syncthing_url": config["syncthing_url"],
             "device_id": config["local_device_id"],
             "mac_address": config["mac_mac"],
@@ -773,9 +1062,10 @@ def pairing_info():
         "dock": {
             "supported": platform.system() == "Darwin",
             "app_path": dock_app_path,
-            "icon_path": "/app-icon.svg",
+            "icon_path": icon["path"],
             "installed": Path(dock_app_path).exists(),
         },
+        "icon": icon,
         "syncthing_error": syncthing_error,
     }
 
@@ -966,7 +1256,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def read_json(self):
         length = int(self.headers.get("Content-Length", "0"))
-        if length > 1_000_000:
+        if length > 6_000_000:
             raise ValueError("Request too large")
         raw = self.rfile.read(length) if length else b"{}"
         return json.loads(raw.decode("utf-8"))
@@ -1009,6 +1299,10 @@ class Handler(BaseHTTPRequestHandler):
                         "remote_error": remote_error,
                     }
                 )
+            if path == "/api/dependencies/local":
+                return self.send_json(endpoint_inventory())
+            if path == "/api/dependencies/remote":
+                return self.send_json(remote_agent_request("/api/agent/dependencies", timeout=25))
             if path.startswith("/api/jobs/"):
                 job_id = path.rsplit("/", 1)[-1]
                 with JOBS_LOCK:
@@ -1016,6 +1310,8 @@ class Handler(BaseHTTPRequestHandler):
                 if not job:
                     return self.send_json({"error": "Job not found"}, 404)
                 return self.send_json(job)
+            if path.startswith("/runtime-icon/"):
+                return self.serve_runtime_icon(path)
             return self.serve_static(path)
         except Exception as exc:
             return self.send_json({"error": str(exc)}, 500)
@@ -1051,6 +1347,12 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json(audit_project(payload))
             if path == "/api/normalize":
                 return self.send_json({"job": start_normalize_job(payload)}, 202)
+            if path == "/api/source-renames/preview":
+                return self.send_json(source_rename_preview(payload))
+            if path == "/api/source-renames/apply":
+                return self.send_json(apply_source_renames(payload))
+            if path == "/api/dependencies/audit":
+                return self.send_json(dependency_audit(payload))
             if path == "/api/wake":
                 mac = payload.get("mac") or load_config()["remote_mac"]
                 return self.send_json({"ok": True, "sent_to": send_magic_packet(mac)})
@@ -1058,6 +1360,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json(resume_current_sync(payload))
             if path == "/api/dock/install":
                 return self.send_json(install_dock_shortcut())
+            if path == "/api/icon/upload":
+                return self.send_json(upload_custom_icon(payload))
+            if path == "/api/icon/reset":
+                return self.send_json(reset_custom_icon())
             if path == "/api/remote/target":
                 target = payload.get("path", "")
                 if not target:
@@ -1088,6 +1394,22 @@ class Handler(BaseHTTPRequestHandler):
         mime, _ = mimetypes.guess_type(candidate.name)
         self.send_response(200)
         self.send_header("Content-Type", (mime or "application/octet-stream") + ("; charset=utf-8" if (mime or "").startswith("text/") else ""))
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def serve_runtime_icon(self, request_path):
+        filename = urllib.parse.unquote(request_path.rsplit("/", 1)[-1])
+        if not re.fullmatch(r"app-icon\.(png|jpg|jpeg)", filename):
+            return self.send_json({"error": "Icon not found"}, 404)
+        candidate = (RUNTIME_ASSET_DIR / filename).resolve()
+        if RUNTIME_ASSET_DIR.resolve() not in candidate.parents or not candidate.is_file():
+            return self.send_json({"error": "Icon not found"}, 404)
+        data = candidate.read_bytes()
+        mime, _ = mimetypes.guess_type(candidate.name)
+        self.send_response(200)
+        self.send_header("Content-Type", mime or "application/octet-stream")
         self.send_header("Cache-Control", "no-cache")
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()

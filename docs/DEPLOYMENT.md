@@ -21,7 +21,7 @@ python3 server.py
 
 Running the installer again updates the service code while preserving `config.json` and `runtime-state.json` in the installed directory.
 
-6. 可选 Dock 快捷方式。脚本会生成 macOS `.icns` 图标并刷新 Dock。 / Optional Dock shortcut. The script generates the macOS `.icns` icon and refreshes the Dock:
+6. 可选 Dock 快捷方式。脚本会生成 macOS `.icns` 图标并刷新 Dock；如果网页中已上传 PNG/JPG 自定义图标，脚本会优先使用它。 / Optional Dock shortcut. The script generates the macOS `.icns` icon and refreshes the Dock; if a PNG/JPG custom icon was uploaded from the web UI, the script uses it first:
 
 ```sh
 ./mac/install-dock-shortcut.sh
@@ -30,6 +30,23 @@ Running the installer again updates the service code while preserving `config.js
 也可以在网页控制台的 `Pairing` 页面点击 `安装/刷新 Dock 快捷方式`。
 
 You can also click `Install/Refresh Dock Shortcut` on the dashboard `Pairing` page.
+
+## 网页访问地址 / Web Dashboard URL
+
+控制台网页由 Mac 控制端提供。Mac 本机可以打开 `http://127.0.0.1:8765`，Windows 或其他设备必须打开 Pairing 页面列出的局域网地址，例如 `http://192.168.0.243:8765`。
+
+The dashboard is served by the Mac controller. The Mac itself can open `http://127.0.0.1:8765`; Windows and other devices must open the LAN URL listed on the Pairing page, such as `http://192.168.0.243:8765`.
+
+如果 Windows 无法打开，请检查：
+
+If Windows cannot open it, check:
+
+- Mac 控制端正在运行，并且 `listen_host` 是 `0.0.0.0` 或 Mac 的局域网 IP。
+- The Mac controller is running and `listen_host` is `0.0.0.0` or the Mac LAN IP.
+- Mac 防火墙允许 TCP 8765 入站。
+- The Mac firewall allows inbound TCP 8765.
+- Windows 与 Mac 在同一个局域网内。
+- Windows and Mac are on the same LAN.
 
 ## Windows 节点 / Windows Node
 
@@ -48,6 +65,32 @@ powershell -ExecutionPolicy Bypass -File .\install-agent.ps1
 ```
 
 5. 确认 Windows 防火墙允许 TCP 8766 和 Syncthing 端口。 / Confirm Windows firewall allows TCP 8766 and Syncthing ports.
+
+## 旧同步续传到 D 盘 / Resume Old Sync on the D Drive
+
+如果旧 `lan-sync` 因 Windows 非法文件名卡住，请先在 Mac 控制台创建规范化副本，然后在 Windows 上用 `windows/seed-normalized-project.ps1` 把已有副本种到 `D:\LanSyncProjects`，再注册为独立 Syncthing 文件夹。
+
+If the old `lan-sync` folder is stalled by Windows-invalid filenames, first create a normalized copy from the Mac dashboard, then use `windows/seed-normalized-project.ps1` on Windows to seed the existing copy into `D:\LanSyncProjects` and register it as an independent Syncthing folder.
+
+完整流程见 / Full workflow: [Windows D 盘迁移与续传 / Windows D-drive migration and resume](WINDOWS_D_DRIVE_MIGRATION.md)。
+
+命名检查页提供单独的源路径改名确认按钮，可在预览清单后把 Mac 源工程内部文件名同步为规范名。
+
+The naming page provides a separate confirmed source-rename action, allowing the Mac source project internals to be aligned to safe names after reviewing the list.
+
+## 工程依赖检查 / Project Dependency Check
+
+在 `Naming` 页面填入源工程路径后，可以点击 `检查依赖` 查看 Adobe 文件、字体、插件和外部路径线索。点击 `打包依赖清单` 会在工程内创建 `_DependencyBundle`，其中包含 `dependency_manifest.json`、说明文件和可同步的项目本地字体/Adobe 辅助资产。
+
+After entering a source project path on the `Naming` page, click `Check Dependencies` to review Adobe files, fonts, plugins, and external path signals. Clicking `Bundle Dependency Manifest` creates `_DependencyBundle` inside the project with `dependency_manifest.json`, a README, and syncable project-local fonts/Adobe helper assets.
+
+Windows 独立检查脚本：
+
+Standalone Windows check script:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\windows\check-dependencies.ps1
+```
 
 ## 目标磁盘选择 / Storage Target Selection
 

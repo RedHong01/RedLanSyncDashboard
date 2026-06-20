@@ -6,6 +6,8 @@ EXECUTABLE="$APP_DIR/Contents/MacOS/RedLanSync"
 PLIST="$APP_DIR/Contents/Info.plist"
 RESOURCES="$APP_DIR/Contents/Resources"
 SCRIPT_DIR="${0:A:h}"
+ROOT_DIR="${SCRIPT_DIR:h}"
+RUNTIME_ASSETS="$ROOT_DIR/runtime-assets"
 SOURCE_ICNS="$SCRIPT_DIR/RedLanSync.icns"
 ICON_GENERATOR="$SCRIPT_DIR/generate_app_icon.py"
 ICONSET="$RESOURCES/RedLanSync.iconset"
@@ -38,7 +40,30 @@ cat > "$PLIST" <<'EOF'
 </plist>
 EOF
 
-if [[ -f "$SOURCE_ICNS" ]]; then
+CUSTOM_ICON_SOURCE=""
+for candidate in "$RUNTIME_ASSETS/app-icon.png" "$RUNTIME_ASSETS/app-icon.jpg" "$RUNTIME_ASSETS/app-icon.jpeg"; do
+    if [[ -f "$candidate" ]]; then
+        CUSTOM_ICON_SOURCE="$candidate"
+        break
+    fi
+done
+
+if [[ -n "$CUSTOM_ICON_SOURCE" ]] && [[ -x /usr/bin/sips ]] && [[ -x /usr/bin/iconutil ]]; then
+    rm -rf "$ICONSET"
+    mkdir -p "$ICONSET"
+    /usr/bin/sips -s format png -z 16 16 "$CUSTOM_ICON_SOURCE" --out "$ICONSET/icon_16x16.png" >/dev/null
+    /usr/bin/sips -s format png -z 32 32 "$CUSTOM_ICON_SOURCE" --out "$ICONSET/icon_16x16@2x.png" >/dev/null
+    /usr/bin/sips -s format png -z 32 32 "$CUSTOM_ICON_SOURCE" --out "$ICONSET/icon_32x32.png" >/dev/null
+    /usr/bin/sips -s format png -z 64 64 "$CUSTOM_ICON_SOURCE" --out "$ICONSET/icon_32x32@2x.png" >/dev/null
+    /usr/bin/sips -s format png -z 128 128 "$CUSTOM_ICON_SOURCE" --out "$ICONSET/icon_128x128.png" >/dev/null
+    /usr/bin/sips -s format png -z 256 256 "$CUSTOM_ICON_SOURCE" --out "$ICONSET/icon_128x128@2x.png" >/dev/null
+    /usr/bin/sips -s format png -z 256 256 "$CUSTOM_ICON_SOURCE" --out "$ICONSET/icon_256x256.png" >/dev/null
+    /usr/bin/sips -s format png -z 512 512 "$CUSTOM_ICON_SOURCE" --out "$ICONSET/icon_256x256@2x.png" >/dev/null
+    /usr/bin/sips -s format png -z 512 512 "$CUSTOM_ICON_SOURCE" --out "$ICONSET/icon_512x512.png" >/dev/null
+    /usr/bin/sips -s format png -z 1024 1024 "$CUSTOM_ICON_SOURCE" --out "$ICONSET/icon_512x512@2x.png" >/dev/null
+    /usr/bin/iconutil -c icns "$ICONSET" -o "$ICNS"
+    rm -rf "$ICONSET"
+elif [[ -f "$SOURCE_ICNS" ]]; then
     cp "$SOURCE_ICNS" "$ICNS"
 elif [[ -f "$ICON_GENERATOR" ]] && command -v python3 >/dev/null 2>&1 && [[ -x /usr/bin/iconutil ]]; then
     rm -rf "$ICONSET"

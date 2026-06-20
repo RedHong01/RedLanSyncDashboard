@@ -5,3 +5,4 @@ runtime-state.json
 __pycache__/
 *.pyc
 windows/agent-config.generated.json
+runtime-assets/

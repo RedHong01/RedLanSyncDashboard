@@ -419,6 +419,30 @@ button {
   margin-top: 16px;
 }
 
+.access-hint {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.icon-customizer {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.icon-customizer input[type="file"] {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid #bfc9cc;
+  border-radius: 5px;
+  background: #fff;
+  color: var(--muted);
+  font-size: 11px;
+}
+
 .dock-actions span {
   overflow: hidden;
   font-size: 10px;
@@ -712,6 +736,7 @@ button {
 
 .form-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
 }
@@ -738,6 +763,12 @@ button {
   border: 1px solid #aebabe;
   background: #ffffff;
   color: var(--ink);
+}
+
+.button.danger {
+  border: 1px solid var(--red);
+  background: var(--red-soft);
+  color: var(--red);
 }
 
 .button.wake {
@@ -874,6 +905,28 @@ th:nth-child(2) {
   margin: 11px 0 0;
   overflow-wrap: anywhere;
   font-size: 10px;
+}
+
+.source-rename-panel .table-wrap {
+  max-height: 300px;
+}
+
+.dependency-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.dependency-bundle-path {
+  margin: 0 0 12px;
+  overflow-wrap: anywhere;
+  font-size: 10px;
+}
+
+.warning-chip {
+  background: var(--amber-soft);
+  color: #7e4900;
 }
 
 .state-timeline {

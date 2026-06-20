@@ -3,9 +3,12 @@ const savedLanguage = localStorage.getItem("red-lan-sync-language");
 const state = {
   overview: null,
   audit: null,
+  dependencyAudit: null,
   activeJob: null,
   pairing: null,
   updateInfo: null,
+  sourceRenamePlan: null,
+  iconPath: "/app-icon.svg",
   polling: false,
   currentTab: "overview",
   lang: savedLanguage || ((navigator.language || "").toLowerCase().startsWith("zh") ? "zh" : "en"),
@@ -37,12 +40,31 @@ const i18n = {
     recentJobs: "最近任务",
     emptyJobs: "当前没有后台任务",
     namingTitle: "工程命名审计",
-    sourceUntouched: "原文件不改动",
+    sourceUntouched: "源路径改名需确认",
     sourceFolder: "源工程文件夹",
     normalizedCopy: "规范化副本位置",
     keepSpaces: "保留空格",
     scanNames: "扫描命名",
     createSafeCopy: "创建安全副本",
+    previewSourceRename: "列出源路径改名",
+    applySourceRename: "确认改名源路径",
+    sourceRenameTitle: "待确认源路径改名",
+    dependencyTitle: "工程依赖检查",
+    dependencyHint: "识别 Adobe、字体、插件和外部路径依赖",
+    checkDependencies: "检查依赖",
+    bundleDependencies: "打包依赖清单",
+    dependencyAdobeFiles: "Adobe 文件",
+    dependencyFonts: "字体线索",
+    dependencyExternalRefs: "外部路径",
+    dependencyRemoteMissing: "远端缺失",
+    dependencyCategory: "分类",
+    dependencyItem: "项目",
+    dependencyStatus: "状态",
+    dependencyComplete: "依赖检查完成",
+    dependencyBundleComplete: "依赖清单已打包：{path}",
+    dependencyNoFindings: "没有发现明显依赖线索",
+    dependencyReviewRequired: "需要人工核对 Adobe 插件/字体",
+    dependencyRemoteUnavailable: "Windows 依赖清单暂时不可用",
     resumeSync: "继续当前同步",
     resumeSyncHint: "恢复暂停项并重新扫描当前同步文件夹",
     quickSyncTitle: "新增同步文件夹",
@@ -79,12 +101,19 @@ const i18n = {
     controllerAccess: "控制台入口",
     copyLanUrl: "复制局域网地址",
     copyDeviceId: "复制本机设备 ID",
+    windowsAccessHint: "Windows 端请打开局域网地址；127.0.0.1 只适用于运行控制台的这台电脑。",
     dockShortcutTitle: "Dock 快捷方式",
     dockShortcutBody: "把控制台入口固定在 macOS Dock，并使用同一套应用图标。",
+    uploadCustomIcon: "上传自定义图标",
+    resetCustomIcon: "恢复默认图标",
     installDockShortcut: "安装/刷新 Dock 快捷方式",
     dockShortcutPath: "Dock 路径",
     dockShortcutInstalled: "Dock 快捷方式已安装并刷新图标",
     dockShortcutUnsupported: "当前系统不支持 Dock 快捷方式安装",
+    iconUpdated: "图标已更新",
+    iconReset: "已恢复默认图标",
+    iconRequired: "请选择 PNG 或 JPG 图标",
+    iconTooLarge: "图标文件不能超过 3 MB",
     sharedFolder: "共享文件夹",
     folderPath: "本机路径",
     deviceId: "本机设备 ID",
@@ -151,9 +180,18 @@ const i18n = {
     busyRegistering: "注册中",
     busyAdding: "添加中",
     busyResuming: "继续中",
+    busyPreviewing: "生成清单",
+    busyRenaming: "改名中",
+    busyChecking: "检查中",
+    busyBundling: "打包中",
     auditComplete: "扫描完成：{count} 个条目需要规范化",
     noRenameNeeded: "没有发现需要修改的文件名",
     safeCopyDone: "安全副本与检查报告已完成",
+    sourceRenameReady: "已列出 {count} 个源路径改名",
+    sourceRenameDone: "已改名 {count} 个源路径；剩余 {remaining}",
+    sourceRenameNoop: "源路径已安全，无需改名",
+    sourceRenameConfirm: "确认要在源工程里执行这些改名吗？此操作会修改源文件/文件夹名称。",
+    previewTruncated: "仅显示前 {count} 项",
     copyFailed: "创建副本失败",
     wakeSent: "唤醒包已发送：{targets}",
     resumeDone: "已请求继续同步，并重新扫描当前文件夹",
@@ -212,12 +250,31 @@ const i18n = {
     recentJobs: "Recent Jobs",
     emptyJobs: "No background jobs",
     namingTitle: "Project Name Audit",
-    sourceUntouched: "Source unchanged",
+    sourceUntouched: "Source rename requires confirmation",
     sourceFolder: "Source Project Folder",
     normalizedCopy: "Normalized Copy Location",
     keepSpaces: "Keep spaces",
     scanNames: "Scan Names",
     createSafeCopy: "Create Safe Copy",
+    previewSourceRename: "List Source Renames",
+    applySourceRename: "Apply Source Renames",
+    sourceRenameTitle: "Source Renames to Confirm",
+    dependencyTitle: "Project Dependency Check",
+    dependencyHint: "Detect Adobe, font, plugin, and external-path dependencies",
+    checkDependencies: "Check Dependencies",
+    bundleDependencies: "Bundle Dependency Manifest",
+    dependencyAdobeFiles: "Adobe Files",
+    dependencyFonts: "Font Signals",
+    dependencyExternalRefs: "External Paths",
+    dependencyRemoteMissing: "Remote Missing",
+    dependencyCategory: "Category",
+    dependencyItem: "Item",
+    dependencyStatus: "Status",
+    dependencyComplete: "Dependency check complete",
+    dependencyBundleComplete: "Dependency manifest bundled: {path}",
+    dependencyNoFindings: "No obvious dependency signals found",
+    dependencyReviewRequired: "Manual Adobe plugin/font review required",
+    dependencyRemoteUnavailable: "Windows dependency inventory is unavailable",
     resumeSync: "Resume Current Sync",
     resumeSyncHint: "Resume paused items and rescan the current sync folder",
     quickSyncTitle: "Add Sync Folder",
@@ -254,12 +311,19 @@ const i18n = {
     controllerAccess: "Controller Access",
     copyLanUrl: "Copy LAN URL",
     copyDeviceId: "Copy Device ID",
+    windowsAccessHint: "On Windows, open the LAN URL. 127.0.0.1 only works on the computer running the dashboard.",
     dockShortcutTitle: "Dock Shortcut",
     dockShortcutBody: "Pin this controller to the macOS Dock and use the shared app icon.",
+    uploadCustomIcon: "Upload Custom Icon",
+    resetCustomIcon: "Restore Default Icon",
     installDockShortcut: "Install/Refresh Dock Shortcut",
     dockShortcutPath: "Dock path",
     dockShortcutInstalled: "Dock shortcut installed and icon refreshed",
     dockShortcutUnsupported: "Dock shortcut installation is not supported on this system",
+    iconUpdated: "Icon updated",
+    iconReset: "Default icon restored",
+    iconRequired: "Choose a PNG or JPG icon",
+    iconTooLarge: "Icon file must be under 3 MB",
     sharedFolder: "Shared Folder",
     folderPath: "Local Path",
     deviceId: "Local Device ID",
@@ -326,9 +390,18 @@ const i18n = {
     busyRegistering: "Registering",
     busyAdding: "Adding",
     busyResuming: "Resuming",
+    busyPreviewing: "Listing",
+    busyRenaming: "Renaming",
+    busyChecking: "Checking",
+    busyBundling: "Bundling",
     auditComplete: "Scan complete: {count} items need normalization",
     noRenameNeeded: "No filenames need changes",
     safeCopyDone: "Safe copy and reports are complete",
+    sourceRenameReady: "Listed {count} source renames",
+    sourceRenameDone: "Renamed {count} source paths; {remaining} remaining",
+    sourceRenameNoop: "Source paths are already safe",
+    sourceRenameConfirm: "Apply these renames in the source project? This will modify source file/folder names.",
+    previewTruncated: "Showing first {count} items",
     copyFailed: "Copy failed",
     wakeSent: "Wake packet sent: {targets}",
     resumeDone: "Sync resume requested and current folder scan started",
@@ -396,8 +469,24 @@ function applyTranslations() {
   $("pairingRefreshButton").setAttribute("aria-label", t("refreshPairing"));
   if (state.overview) renderOverview(state.overview);
   if (state.audit) renderAuditSummary(state.audit);
+  if (state.dependencyAudit) renderDependencyAudit(state.dependencyAudit);
+  if (state.sourceRenamePlan) renderSourceRenamePreview(state.sourceRenamePlan);
   if (state.pairing) renderPairing(state.pairing);
   if (state.updateInfo) renderUpdateBubble(state.updateInfo);
+}
+
+function updateAppIcon(icon) {
+  const nextPath = (icon && icon.path) || "/app-icon.svg";
+  if (state.iconPath === nextPath) return;
+  state.iconPath = nextPath;
+  document.querySelectorAll(".app-icon-image").forEach((node) => {
+    node.src = nextPath;
+  });
+  const favicon = $("faviconLink");
+  if (favicon) {
+    favicon.href = nextPath;
+    favicon.type = (icon && icon.mime) || (nextPath.endsWith(".svg") ? "image/svg+xml" : "image/png");
+  }
 }
 
 async function api(path, options = {}) {
@@ -544,6 +633,7 @@ function renderOverview(data) {
   const remote = data.remote;
   const remoteAgent = remote.agent || {};
   const completion = Number(sync.completion || 0);
+  updateAppIcon(config.icon);
 
   $("syncPercent").textContent = `${completion.toFixed(1)}%`;
   $("needBytes").textContent = formatBytes(sync.need_bytes);
@@ -679,9 +769,91 @@ function renderAuditSummary(result) {
   $("normalizeButton").disabled = false;
 }
 
+function clearSourceRenamePreview() {
+  state.sourceRenamePlan = null;
+  $("sourceRenamePanel").classList.add("is-hidden");
+  $("sourceRenameRows").innerHTML = "";
+  $("sourceRenameSummary").textContent = "--";
+  $("applySourceRenameButton").disabled = true;
+}
+
+function sourceRenamePayload() {
+  return {
+    source: $("sourcePath").value.trim(),
+    destination: $("destinationPath").value.trim(),
+    keep_spaces: $("keepSpaces").checked,
+    limit: 500,
+  };
+}
+
+function renderSourceRenamePreview(plan) {
+  state.sourceRenamePlan = plan;
+  const count = Number(plan.operation_count || 0);
+  const suffix = plan.truncated ? ` · ${t("previewTruncated", { count: plan.preview_limit })}` : "";
+  $("sourceRenameSummary").textContent = count
+    ? `${t("sourceRenameReady", { count })}${suffix}`
+    : t("sourceRenameNoop");
+  $("sourceRenameRows").innerHTML = (plan.operations || []).map((item) => `
+    <tr>
+      <td class="mono">${escapeHtml(item.source_rel)}</td>
+      <td class="mono">${escapeHtml(item.dest_rel)}</td>
+      <td>${(item.reasons || []).map((reason) => escapeHtml(t(reason))).join(state.lang === "zh" ? "、" : ", ")}</td>
+    </tr>
+  `).join("") || `<tr><td colspan="3">${escapeHtml(t("noRenameNeeded"))}</td></tr>`;
+  $("sourceRenamePanel").classList.remove("is-hidden");
+  $("applySourceRenameButton").disabled = !count;
+}
+
+async function previewSourceRenames() {
+  const button = $("previewSourceRenameButton");
+  setBusy(button, true, "busyPreviewing");
+  try {
+    const plan = await api("/api/source-renames/preview", {
+      method: "POST",
+      body: JSON.stringify(sourceRenamePayload()),
+    });
+    renderSourceRenamePreview(plan);
+    toast(plan.operation_count ? t("sourceRenameReady", { count: plan.operation_count }) : t("sourceRenameNoop"));
+  } catch (error) {
+    toast(error.message, true);
+  } finally {
+    setBusy(button, false);
+  }
+}
+
+async function applySourceRenames() {
+  if (!state.sourceRenamePlan || !state.sourceRenamePlan.operation_count) return;
+  if (!window.confirm(t("sourceRenameConfirm"))) return;
+  const button = $("applySourceRenameButton");
+  setBusy(button, true, "busyRenaming");
+  try {
+    const result = await api("/api/source-renames/apply", {
+      method: "POST",
+      body: JSON.stringify({
+        ...sourceRenamePayload(),
+        confirm: true,
+        plan_hash: state.sourceRenamePlan.plan_hash,
+      }),
+    });
+    toast(t("sourceRenameDone", { count: result.applied_count, remaining: result.remaining_count }));
+    clearSourceRenamePreview();
+    const refreshed = await api("/api/audit", {
+      method: "POST",
+      body: JSON.stringify(sourceRenamePayload()),
+    });
+    renderAuditSummary(refreshed);
+  } catch (error) {
+    toast(error.message, true);
+  } finally {
+    setBusy(button, false);
+    button.disabled = !state.sourceRenamePlan?.operation_count;
+  }
+}
+
 async function runAudit(event) {
   event.preventDefault();
   const button = $("auditButton");
+  clearSourceRenamePreview();
   setBusy(button, true, "busyScanning");
   try {
     const result = await api("/api/audit", {
@@ -721,6 +893,84 @@ async function startNormalize() {
   } catch (error) {
     setBusy(button, false);
     toast(error.message, true);
+  }
+}
+
+function dependencyRows(result) {
+  const rows = [];
+  (result.adobe_files || []).slice(0, 20).forEach((item) => {
+    rows.push({ category: "Adobe", item: item.relative_path, status: item.application });
+  });
+  (result.font_references || []).slice(0, 20).forEach((item) => {
+    rows.push({
+      category: t("dependencyFonts"),
+      item: item.name,
+      status: item.local_match ? item.local_match.file : t("dependencyReviewRequired"),
+    });
+  });
+  (result.project_fonts || []).slice(0, 20).forEach((item) => {
+    rows.push({ category: "Project Font", item: item.relative_path, status: item.extension });
+  });
+  (result.external_paths || []).slice(0, 20).forEach((item) => {
+    rows.push({ category: "External Path", item, status: t("dependencyReviewRequired") });
+  });
+  (result.remote_comparison?.missing_fonts || []).slice(0, 20).forEach((item) => {
+    rows.push({ category: t("dependencyRemoteMissing"), item: item.name, status: t("dependencyFonts") });
+  });
+  return rows;
+}
+
+function renderDependencyAudit(result) {
+  state.dependencyAudit = result;
+  const summary = result.summary || {};
+  const remote = result.remote_comparison || {};
+  const remoteMissing = (remote.missing_fonts || []).length + (remote.missing_plugins || []).length;
+  $("dependencyAdobeFiles").textContent = summary.adobe_file_count || 0;
+  $("dependencyFonts").textContent = (summary.project_font_count || 0) + (summary.font_reference_count || 0);
+  $("dependencyExternalRefs").textContent = summary.external_reference_count || 0;
+  $("dependencyRemoteMissing").textContent = remote.available ? remoteMissing : "--";
+  $("dependencyChips").innerHTML = (result.categories || []).map((item) => `<span class="reason-chip">${escapeHtml(item.replaceAll("_", " "))}</span>`).join("")
+    || `<span class="reason-chip">${escapeHtml(t("dependencyNoFindings"))}</span>`;
+  if (summary.adobe_dependency_review_required) {
+    $("dependencyChips").innerHTML += `<span class="reason-chip warning-chip">${escapeHtml(t("dependencyReviewRequired"))}</span>`;
+  }
+  if (result.remote_error) {
+    $("dependencyChips").innerHTML += `<span class="reason-chip warning-chip">${escapeHtml(t("dependencyRemoteUnavailable"))}</span>`;
+  }
+  $("dependencyBundlePath").textContent = result.bundle?.path ? t("dependencyBundleComplete", { path: result.bundle.path }) : "";
+  const rows = dependencyRows(result);
+  $("dependencyRows").innerHTML = rows.map((row) => `
+    <tr>
+      <td>${escapeHtml(row.category)}</td>
+      <td class="mono">${escapeHtml(row.item)}</td>
+      <td>${escapeHtml(row.status)}</td>
+    </tr>
+  `).join("") || `<tr><td colspan="3">${escapeHtml(t("dependencyNoFindings"))}</td></tr>`;
+  $("dependencyPanel").classList.remove("is-hidden");
+}
+
+async function runDependencyAudit(packageBundle = false) {
+  const button = packageBundle ? $("dependencyBundleButton") : $("dependencyAuditButton");
+  if (!$("sourcePath").value.trim()) {
+    toast(t("sourceFolder"), true);
+    return;
+  }
+  setBusy(button, true, packageBundle ? "busyBundling" : "busyChecking");
+  try {
+    const result = await api("/api/dependencies/audit", {
+      method: "POST",
+      body: JSON.stringify({
+        source: $("sourcePath").value.trim(),
+        package: packageBundle,
+        compare_remote: true,
+      }),
+    });
+    renderDependencyAudit(result);
+    toast(packageBundle && result.bundle?.path ? t("dependencyBundleComplete", { path: result.bundle.path }) : t("dependencyComplete"));
+  } catch (error) {
+    toast(error.message, true);
+  } finally {
+    setBusy(button, false);
   }
 }
 
@@ -886,6 +1136,7 @@ function renderPairing(data) {
     : `<div class="empty-state">${escapeHtml(t("loading"))}</div>`;
   $("controllerDeviceId").textContent = data.controller.device_id || "--";
   const dock = data.dock || {};
+  updateAppIcon(data.icon || { path: dock.icon_path });
   $("installDockButton").disabled = !dock.supported;
   $("dockShortcutPath").textContent = dock.supported
     ? `${t("dockShortcutPath")}: ${dock.app_path || "--"}`
@@ -894,6 +1145,68 @@ function renderPairing(data) {
   $("pairFolderPath").textContent = data.folder.path || "--";
   renderKnownDevices(data.known_devices || []);
   renderPendingDevices(data.pending_devices || []);
+}
+
+function readAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(reader.result));
+    reader.addEventListener("error", () => reject(reader.error || new Error("Unable to read file")));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadCustomIcon() {
+  const input = $("customIconFile");
+  const file = input.files && input.files[0];
+  if (!file || !["image/png", "image/jpeg"].includes(file.type)) {
+    toast(t("iconRequired"), true);
+    return;
+  }
+  if (file.size > 3 * 1024 * 1024) {
+    toast(t("iconTooLarge"), true);
+    return;
+  }
+  const button = $("uploadIconButton");
+  setBusy(button, true, "busySaving");
+  try {
+    const result = await api("/api/icon/upload", {
+      method: "POST",
+      body: JSON.stringify({
+        name: file.name,
+        type: file.type,
+        data_url: await readAsDataUrl(file),
+      }),
+    });
+    updateAppIcon(result.icon);
+    toast(t("iconUpdated"));
+    await refreshPairing();
+  } catch (error) {
+    toast(error.message, true);
+  } finally {
+    setBusy(button, false);
+    button.disabled = !input.files?.length;
+  }
+}
+
+async function resetCustomIcon() {
+  const button = $("resetIconButton");
+  setBusy(button, true, "busySaving");
+  try {
+    const result = await api("/api/icon/reset", {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+    $("customIconFile").value = "";
+    $("uploadIconButton").disabled = true;
+    updateAppIcon(result.icon);
+    toast(t("iconReset"));
+    await refreshPairing();
+  } catch (error) {
+    toast(error.message, true);
+  } finally {
+    setBusy(button, false);
+  }
 }
 
 function renderKnownDevices(devices) {
@@ -1051,6 +1364,10 @@ $("refreshDisksButton").addEventListener("click", refreshDisks);
 $("pairingRefreshButton").addEventListener("click", () => refreshPairing(true));
 $("auditForm").addEventListener("submit", runAudit);
 $("normalizeButton").addEventListener("click", startNormalize);
+$("previewSourceRenameButton").addEventListener("click", previewSourceRenames);
+$("applySourceRenameButton").addEventListener("click", applySourceRenames);
+$("dependencyAuditButton").addEventListener("click", () => runDependencyAudit(false));
+$("dependencyBundleButton").addEventListener("click", () => runDependencyAudit(true));
 $("wakeButton").addEventListener("click", wakeRemote);
 $("resumeSyncButton").addEventListener("click", resumeSync);
 $("targetForm").addEventListener("submit", saveTarget);
@@ -1059,6 +1376,11 @@ $("quickRegisterForm").addEventListener("submit", registerQuickProject);
 $("useDestinationForSync").addEventListener("click", useDestinationForSync);
 $("addDeviceForm").addEventListener("submit", addDevice);
 $("installDockButton").addEventListener("click", installDockShortcut);
+$("customIconFile").addEventListener("change", (event) => {
+  $("uploadIconButton").disabled = !event.target.files?.length;
+});
+$("uploadIconButton").addEventListener("click", uploadCustomIcon);
+$("resetIconButton").addEventListener("click", resetCustomIcon);
 $("dismissUpdateBubble").addEventListener("click", dismissUpdateBubble);
 $("copyDashboardUrl").addEventListener("click", () => copyText((state.pairing?.controller?.dashboard_urls || [])[1] || (state.pairing?.controller?.dashboard_urls || [])[0] || ""));
 $("copyControllerId").addEventListener("click", () => copyText(state.pairing?.controller?.device_id || ""));

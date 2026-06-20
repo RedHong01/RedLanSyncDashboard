@@ -1,0 +1,50 @@
+* text=auto
+
+.editorconfig text eol=lf
+.gitattributes text eol=lf
+.gitignore text eol=lf
+
+*.py text eol=lf
+*.sh text eol=lf
+*.js text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.ttc binary
+*.dfont binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
+*.zip binary
+*.aep binary
+*.prproj binary
+*.mogrt binary
+*.ai binary
+*.indd binary
+*.xd binary
+*.aex binary
+*.plugin binary
+*.zxp binary
+*.psd binary
+*.psb binary
+*.tif binary
+*.tiff binary
+*.mp4 binary
+*.mov binary
+*.wav binary
+*.aiff binary

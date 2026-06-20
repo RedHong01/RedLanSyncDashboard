@@ -10,14 +10,16 @@ Red LAN Sync Dashboard is a local-first LAN control panel for a Mac/Windows Sync
 - Shows Syncthing progress, connection type, folder state, and recent operations.
 - 在同步前扫描工程文件夹，检查 Windows/macOS 文件名兼容问题。
 - Scans project folders for Windows/macOS filename problems before sync.
-- 创建规范化副本，不直接修改源工程。
-- Creates a normalized copy instead of mutating the source project.
+- 默认创建规范化副本；也可单独预览源路径改名清单，确认后才把源工程名称同步为规范名。
+- Creates a normalized copy by default; source-path renames are previewed separately and applied only after confirmation.
 - 写入 `_CrossPlatformReport`，包含映射 JSON/CSV 和 After Effects 重新链接辅助脚本。
 - Writes `_CrossPlatformReport` with mapping JSON/CSV and After Effects relink helper scripts.
 - 通过 Windows companion agent 回报 Windows 磁盘容量和设备状态。
 - Reports Windows disk capacity and device state through the Windows companion agent.
 - 可把大型工程注册为单独 Syncthing 文件夹，并指定 Windows 目标磁盘/路径。
 - Registers large projects as separate Syncthing folders with a chosen Windows target disk/path.
+- 检测 Adobe 工程、字体、插件、预设和外部路径依赖，并把项目本地依赖打包进 `_DependencyBundle` 同步到另一端。
+- Detects Adobe project, font, plugin, preset, and external-path dependencies, then bundles project-local dependencies into `_DependencyBundle` for sync.
 - 可从命名检查或存储页面新增同步文件夹。
 - Adds new sync folders from either the naming workflow or the storage workflow.
 - 在固件和网络支持时发送 Wake-on-LAN 唤醒包。
@@ -25,11 +27,13 @@ Red LAN Sync Dashboard is a local-first LAN control panel for a Mac/Windows Sync
 - 提供新电脑或 Android Syncthing 客户端的配对页面。
 - Provides a pairing page for new computers or Android Syncthing clients.
 - 在网页控制台和 macOS Dock 快捷方式中使用同一套应用图标，并支持从网页刷新 Dock 快捷方式。
-- Uses the same app icon in the web console and macOS Dock shortcut, with a web action to refresh the Dock shortcut.
+- Uses the same app icon in the web console and macOS Dock shortcut, with web actions to upload a custom icon and refresh the Dock shortcut.
 - 检查配置的 GitHub 仓库是否有新版本，并显示更新预览气泡。
 - Checks the configured GitHub repository for newer tool architecture releases and shows an update preview bubble.
 - 支持网页控制台中文/英文切换。
 - Switches the web UI between Chinese and English.
+- Windows、Mac 和手机浏览器打开的是同一个 Mac 控制端网页；Windows 端使用局域网地址，例如 `http://192.168.0.243:8765`。
+- Windows, Mac, and phone browsers use the same Mac-hosted dashboard; Windows should open the LAN URL, for example `http://192.168.0.243:8765`.
 
 ## 要求 / Requirements
 
@@ -139,6 +143,9 @@ Every time a feature, API, deployment flow, directory structure, front-end modul
 
 - [架构 / Architecture](docs/ARCHITECTURE.md)
 - [部署 / Deployment](docs/DEPLOYMENT.md)
+- [多端开发 / Multi-endpoint development](docs/MULTI_ENDPOINT_DEVELOPMENT.md)
+- [工程依赖审计 / Project dependency audit](docs/DEPENDENCY_AUDIT.md)
+- [Windows D 盘迁移与续传 / Windows D-drive migration and resume](docs/WINDOWS_D_DRIVE_MIGRATION.md)
 - [Figma 更新流程 / Figma update workflow](docs/FIGMA_UPDATE_WORKFLOW.md)
 - [安全 / Security](SECURITY.md)
 - [贡献 / Contributing](CONTRIBUTING.md)

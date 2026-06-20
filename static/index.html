@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Red5090 / RedM3Max LAN Sync</title>
-  <link rel="icon" href="/app-icon.svg" type="image/svg+xml">
+  <link id="faviconLink" rel="icon" href="/app-icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">
-        <img class="brand-mark" src="/app-icon.svg" alt="" aria-hidden="true">
+        <img class="brand-mark app-icon-image" src="/app-icon.svg" alt="" aria-hidden="true">
         <div>
           <strong>Red Sync</strong>
           <span>Red5090 / RedM3Max</span>
@@ -154,7 +154,7 @@
             <p class="eyebrow">CROSS-PLATFORM NAMES</p>
             <h2 data-i18n="namingTitle">工程命名审计</h2>
           </div>
-          <span class="status-badge safe" data-i18n="sourceUntouched">原文件不改动</span>
+          <span class="status-badge safe" data-i18n="sourceUntouched">源路径改名需确认</span>
         </div>
 
         <form id="auditForm" class="form-grid">
@@ -173,6 +173,8 @@
           <div class="form-actions">
             <button class="button secondary" id="auditButton" type="submit" data-i18n="scanNames">扫描命名</button>
             <button class="button primary" id="normalizeButton" type="button" disabled data-i18n="createSafeCopy">创建安全副本</button>
+            <button class="button secondary" id="previewSourceRenameButton" type="button" data-i18n="previewSourceRename">列出源路径改名</button>
+            <button class="button danger" id="applySourceRenameButton" type="button" disabled data-i18n="applySourceRename">确认改名源路径</button>
           </div>
         </form>
 
@@ -194,6 +196,24 @@
           </div>
         </div>
 
+
+        <div id="sourceRenamePanel" class="operation-panel source-rename-panel is-hidden">
+          <div class="operation-head">
+            <div>
+              <span data-i18n="sourceRenameTitle">待确认源路径改名</span>
+              <strong id="sourceRenameSummary">--</strong>
+            </div>
+          </div>
+          <div class="table-wrap source-rename-table">
+            <table>
+              <thead>
+                <tr><th data-i18n="originalPath">原路径</th><th data-i18n="safePath">规范路径</th><th data-i18n="reason">原因</th></tr>
+              </thead>
+              <tbody id="sourceRenameRows"></tbody>
+            </table>
+          </div>
+        </div>
+
         <div id="normalizeProgress" class="operation-panel is-hidden">
           <div class="operation-head">
             <div>
@@ -204,6 +224,38 @@
           </div>
           <div class="progress-track"><span id="normalizeProgressBar"></span></div>
           <p id="normalizeDestination" class="mono muted"></p>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <div class="section-heading compact">
+          <div>
+            <p class="eyebrow">PROJECT DEPENDENCIES</p>
+            <h2 data-i18n="dependencyTitle">工程依赖检查</h2>
+          </div>
+          <span class="muted" data-i18n="dependencyHint">识别 Adobe、字体、插件和外部路径依赖</span>
+        </div>
+        <div class="dependency-actions">
+          <button class="button secondary" id="dependencyAuditButton" type="button" data-i18n="checkDependencies">检查依赖</button>
+          <button class="button primary" id="dependencyBundleButton" type="button" data-i18n="bundleDependencies">打包依赖清单</button>
+        </div>
+        <div id="dependencyPanel" class="audit-summary is-hidden">
+          <div class="metric-row">
+            <div><span data-i18n="dependencyAdobeFiles">Adobe 文件</span><strong id="dependencyAdobeFiles">0</strong></div>
+            <div><span data-i18n="dependencyFonts">字体线索</span><strong id="dependencyFonts">0</strong></div>
+            <div><span data-i18n="dependencyExternalRefs">外部路径</span><strong id="dependencyExternalRefs">0</strong></div>
+            <div><span data-i18n="dependencyRemoteMissing">远端缺失</span><strong id="dependencyRemoteMissing">0</strong></div>
+          </div>
+          <div id="dependencyChips" class="reason-chips"></div>
+          <div id="dependencyBundlePath" class="mono muted dependency-bundle-path"></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th data-i18n="dependencyCategory">分类</th><th data-i18n="dependencyItem">项目</th><th data-i18n="dependencyStatus">状态</th></tr>
+              </thead>
+              <tbody id="dependencyRows"></tbody>
+            </table>
+          </div>
         </div>
 
         <div class="section-divider"></div>
@@ -362,6 +414,7 @@
           <article class="device-card">
             <h3 data-i18n="controllerAccess">控制台入口</h3>
             <div id="controllerUrls" class="link-list"><div class="empty-state" data-i18n="loading">读取中</div></div>
+            <p class="access-hint" data-i18n="windowsAccessHint">Windows 端请打开局域网地址；127.0.0.1 只适用于运行控制台的这台电脑。</p>
             <div class="copy-row">
               <button class="button secondary" id="copyDashboardUrl" type="button" data-i18n="copyLanUrl">复制局域网地址</button>
               <button class="button secondary" id="copyControllerId" type="button" data-i18n="copyDeviceId">复制本机设备 ID</button>
@@ -370,10 +423,17 @@
 
           <article class="device-card">
             <div class="dock-card-head">
-              <img class="dock-preview-icon" src="/app-icon.svg" alt="" aria-hidden="true">
+              <img class="dock-preview-icon app-icon-image" src="/app-icon.svg" alt="" aria-hidden="true">
               <div>
                 <h3 data-i18n="dockShortcutTitle">Dock 快捷方式</h3>
                 <p data-i18n="dockShortcutBody">把控制台入口固定在 macOS Dock，并使用同一套应用图标。</p>
+              </div>
+            </div>
+            <div class="icon-customizer">
+              <input id="customIconFile" type="file" accept="image/png,image/jpeg">
+              <div class="dock-actions">
+                <button class="button secondary" id="uploadIconButton" type="button" disabled data-i18n="uploadCustomIcon">上传自定义图标</button>
+                <button class="button secondary" id="resetIconButton" type="button" data-i18n="resetCustomIcon">恢复默认图标</button>
               </div>
             </div>
             <div class="dock-actions">
