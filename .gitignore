@@ -6,3 +6,4 @@ __pycache__/
 *.pyc
 windows/agent-config.generated.json
 runtime-assets/
+windows/OpenSystemSyncDashboard.generated.url

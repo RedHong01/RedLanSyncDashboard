@@ -37,7 +37,7 @@ CUSTOM_ICON_META_PATH = RUNTIME_ASSET_DIR / "app-icon.json"
 CONFIG_PATH = APP_DIR / "config.json"
 STATE_PATH = APP_DIR / "runtime-state.json"
 APP_DISPLAY_NAME = "SystemSync"
-APP_VERSION = "0.1.3"
+APP_VERSION = "0.1.4"
 ICON_UPLOAD_TYPES = {
     "image/png": ("png", b"\x89PNG\r\n\x1a\n"),
     "image/jpeg": ("jpg", b"\xff\xd8"),

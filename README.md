@@ -113,9 +113,9 @@ Copy the `windows` folder to the Windows computer, open Administrator PowerShell
 powershell -ExecutionPolicy Bypass -File .\install-agent.ps1
 ```
 
-Companion 默认监听 TCP 8766，用于回报设备/磁盘状态、记录 Windows 可暴露的电源事件，并在选定目标磁盘上注册工程文件夹。
+Companion 默认监听 TCP 8766，用于回报设备/磁盘状态、记录 Windows 可暴露的电源事件，并在选定目标磁盘上注册工程文件夹。`generate_windows_config.py` 还会生成 `OpenSystemSyncDashboard.generated.url`，Windows 可在 companion 尚未恢复时直接打开 Mac 统一控制台。
 
-The companion listens on TCP 8766, reports device and disk state, records power events when Windows exposes them, and registers project folders on the selected target disk.
+The companion listens on TCP 8766, reports device and disk state, records power events when Windows exposes them, and registers project folders on the selected target disk. `generate_windows_config.py` also creates `OpenSystemSyncDashboard.generated.url` so Windows can open the unified Mac dashboard even before the companion is restored.
 
 ## 配对更多设备 / Pairing More Devices
 
@@ -139,7 +139,7 @@ Set `github_repo` and `current_version` in `config.json`:
 ```json
 {
   "github_repo": "RedHong01/SystemSync",
-  "current_version": "0.1.3"
+  "current_version": "0.1.4"
 }
 ```
 

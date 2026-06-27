@@ -64,6 +64,7 @@ powershell -ExecutionPolicy Bypass -File .\install-agent.ps1
 
 After installation, Windows gets:
 
+- `OpenSystemSyncDashboard.generated.url` 直接控制台兜底入口 / direct dashboard fallback
 - companion agent on TCP `8766`
 - firewall rule
 - scheduled task and Startup fallback
