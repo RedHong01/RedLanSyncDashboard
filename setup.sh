@@ -135,7 +135,21 @@ PY
     fi
 fi
 
-LOCAL_STATUS="$(/usr/bin/curl -sS -o /dev/null -w "%{http_code}" "http://127.0.0.1:8765/" || true)"
+wait_for_url() {
+    local url="$1"
+    local http_status="000"
+    for _ in 1 2 3 4 5 6; do
+        http_status="$(/usr/bin/curl -sS -o /dev/null -w "%{http_code}" "$url" 2>/dev/null || true)"
+        if [[ "$http_status" != "000" ]]; then
+            printf "%s" "$http_status"
+            return
+        fi
+        /bin/sleep 2
+    done
+    printf "%s" "$http_status"
+}
+
+LOCAL_STATUS="$(wait_for_url "http://127.0.0.1:8765/")"
 echo "Mac dashboard: http://127.0.0.1:8765 ($LOCAL_STATUS)"
 
 LAN_URL="$(python3 - "$CONFIG_PATH" <<'PY'
@@ -154,7 +168,7 @@ print(f"http://{ip}:{port}" if ip else "")
 PY
 )"
 if [[ -n "$LAN_URL" ]]; then
-    LAN_STATUS="$(/usr/bin/curl -sS -o /dev/null -w "%{http_code}" "$LAN_URL/" || true)"
+    LAN_STATUS="$(wait_for_url "$LAN_URL/")"
     echo "LAN dashboard: $LAN_URL ($LAN_STATUS)"
 fi
 

@@ -343,6 +343,137 @@ button {
   white-space: nowrap;
 }
 
+.sync-diagnostic {
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+}
+
+.sync-diagnostic.safe {
+  border-color: #b8dfd0;
+  background: #f4fbf8;
+}
+
+.sync-diagnostic.warning {
+  border-color: #f0d19d;
+  background: #fff9ee;
+}
+
+.sync-diagnostic.error {
+  border-color: #efc1bd;
+  background: #fff6f5;
+}
+
+.sync-diagnostic-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 14px;
+}
+
+.sync-diagnostic h2 {
+  margin: 3px 0 0;
+  font-size: 16px;
+}
+
+.sync-diagnostic p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.sync-diagnostic-metrics,
+.diagnostic-current {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 13px;
+}
+
+.sync-diagnostic-metrics > div,
+.diagnostic-current > div {
+  min-width: 0;
+  padding: 10px 11px;
+  border: 1px solid rgba(100, 113, 119, 0.18);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.sync-diagnostic-metrics span,
+.diagnostic-current span,
+.diagnostic-section > span {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.sync-diagnostic-metrics strong,
+.diagnostic-current strong {
+  display: block;
+  margin-top: 4px;
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sync-diagnostic-details {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.diagnostic-section {
+  display: grid;
+  gap: 7px;
+}
+
+.diagnostic-issue,
+.diagnostic-file {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  padding: 10px 11px;
+  border: 1px solid rgba(100, 113, 119, 0.18);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.diagnostic-issue strong,
+.diagnostic-file strong {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.diagnostic-issue span,
+.diagnostic-file span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.diagnostic-files {
+  display: grid;
+  gap: 7px;
+  max-height: 210px;
+  overflow: auto;
+}
+
+.diagnostic-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .section-heading {
   display: flex;
   align-items: flex-end;
@@ -669,6 +800,11 @@ button {
 .compact-row span {
   color: var(--muted);
   font-size: 10px;
+}
+
+#mobileAccessList .compact-row span {
+  line-height: 1.45;
+  white-space: normal;
 }
 
 .job-list {
@@ -1470,6 +1606,20 @@ th:nth-child(2) {
 
   .sync-actions > span {
     white-space: normal;
+  }
+
+  .sync-diagnostic-head,
+  .sync-diagnostic-metrics,
+  .diagnostic-current {
+    grid-template-columns: 1fr;
+  }
+
+  .diagnostic-actions {
+    display: grid;
+  }
+
+  .diagnostic-actions .button {
+    width: 100%;
   }
 
   .language-switch {

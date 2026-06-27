@@ -87,13 +87,21 @@ After installation, Windows gets:
 2. 确认共享文件夹 ID，例如 `lan-sync`。 / Confirm the shared folder ID, such as `lan-sync`.
 3. 在控制台 `Pairing` 页面检查已知设备和待确认设备。 / Check known and pending devices on the dashboard `Pairing` page.
 
-## 4. 工程同步 / Project Sync
+## 4. 移动设备 / Mobile Devices
+
+- iPhone/iPad：用 Safari 打开 Pairing 页面列出的 Mac 局域网控制台 URL，可监控、唤醒、继续同步和配对设备；可添加到主屏幕作为图形入口。 / iPhone/iPad: open the Mac LAN dashboard URL shown on the Pairing page in Safari to monitor, wake, resume sync, and pair devices; add it to the Home Screen for a graphical entry.
+- Android：可以用浏览器打开同一控制台；如果需要作为同步节点，安装 Syncthing 兼容客户端，复制 Android 设备 ID，并在控制台 `Pairing` 页面添加。 / Android: open the same dashboard in a browser; to join as a sync node, install a Syncthing-compatible client, copy the Android device ID, and add it on the dashboard `Pairing` page.
+- iOS/iPadOS 不作为默认常驻文件同步节点处理。 / iOS/iPadOS is not treated as a default always-on file sync node.
+- HTTPS 或 localhost 部署会启用移动控制台壳缓存；普通局域网 HTTP 是实时浏览器入口，不承诺离线缓存。 / HTTPS or localhost deployments enable the mobile controller shell cache; plain LAN HTTP is a live browser entry and does not promise offline caching.
+
+## 5. 工程同步 / Project Sync
 
 - 先运行 `命名检查`，发现非法路径后创建安全副本。 / Run `Name Audit` first and create a safe copy when unsafe paths are found.
 - 用 `检查依赖` 检测 Adobe、Unity、字体、插件和外部路径。 / Use `Check Dependencies` to detect Adobe, Unity, fonts, plugins, and external paths.
 - 用 `新增同步文件夹` 把规范化副本注册到 Mac 和 Windows 目标路径。 / Use `Add Sync Folder` to register the normalized copy to Mac and Windows target paths.
+- 在 `Overview` 的同步诊断面板查看当前项目、卡住项目、无进度时间、相关路径和建议动作。 / Use the sync diagnosis panel on `Overview` to inspect the current project, blocked project, no-progress time, related paths, and suggested actions.
 
-## 5. 验证 / Verify
+## 6. 验证 / Verify
 
 ```sh
 python3 scripts/preflight.py

@@ -1,0 +1,20 @@
+{
+  "name": "SystemSync",
+  "short_name": "SystemSync",
+  "description": "Local LAN sync control panel for desktop and mobile devices.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f7f7",
+  "theme_color": "#132125",
+  "orientation": "any",
+  "categories": ["utilities", "productivity"],
+  "icons": [
+    {
+      "src": "/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

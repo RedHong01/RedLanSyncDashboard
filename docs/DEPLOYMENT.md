@@ -41,6 +41,14 @@ The dashboard is served by the Mac controller. On the Mac, prefer the Dock `Syst
 
 If the hosts alias is unavailable, the launchers on both endpoints automatically fall back to reachable URLs. For manual entry, the Mac can use `http://127.0.0.1:8765`; Windows and other devices should use the Mac LAN URL listed on the Pairing page, such as `http://192.168.0.243:8765`. Do not use `http://127.0.0.1:8765` on Windows because it points back to Windows itself.
 
+移动设备同样使用 Pairing 页面列出的 Mac 局域网 URL。iPhone/iPad 作为控制端使用；Android 可以作为控制端，也可以安装 Syncthing 兼容客户端后作为同步节点加入。
+
+Mobile devices use the same Mac LAN URL listed on the Pairing page. iPhone/iPad act as control devices; Android can act as a controller or join as a sync node through a Syncthing-compatible client.
+
+SystemSync 包含移动 Web 应用元信息，可让 iOS 和 Android 浏览器创建主屏幕入口。完整 service-worker 缓存只会在 HTTPS 安全上下文或 localhost 开发环境启用；普通局域网 HTTP 仍是实时控制台，不做离线缓存承诺。
+
+SystemSync includes mobile web app metadata so iOS and Android browsers can create a Home Screen entry. Full service-worker caching only activates from an HTTPS secure context or localhost during development; plain LAN HTTP remains a live controller page without an offline caching guarantee.
+
 如果 Windows 无法打开，请检查：
 
 If Windows cannot open it, check:
@@ -75,6 +83,16 @@ powershell -ExecutionPolicy Bypass -File .\setup.ps1
 安装脚本会创建两个入口：`SystemSync.lnk` 运行智能启动器并打开可操作的 Mac 控制台，`Wake RedM3Max.url` 打开本机 companion 页面；本机 companion 页面也提供一个跳转按钮，可根据当前配置打开网页管理端。
 
 The installer creates two entries: `SystemSync.lnk` runs the smart launcher and opens the authenticated Mac dashboard, and `Wake RedM3Max.url` opens the local companion page; that local page also includes a button that redirects to the configured dashboard.
+
+## 同步诊断 / Sync Diagnosis
+
+`Overview` 页面会显示当前同步项目、待同步量、无进度时间和阻塞摘要。展开详情后可以看到 Syncthing 返回的相关路径/文件、folder errors，以及常见操作：继续并重新扫描、检查非法命名、打开 Syncthing、检查配对或唤醒远端。
+
+The `Overview` page shows the current sync project, remaining bytes, no-progress time, and a short blocking summary. Expanding the panel shows related paths/files returned by Syncthing, folder errors, and common actions: resume and rescan, check unsafe names, open Syncthing, check pairing, or wake the remote.
+
+默认无进度超时阈值是 120 秒。它用于提示用户“可能卡住”，不是直接判定文件损坏。
+
+The default no-progress timeout is 120 seconds. It hints that sync may be blocked; it does not by itself mean file corruption.
 
 ## 旧同步续传到 D 盘 / Resume Old Sync on the D Drive
 

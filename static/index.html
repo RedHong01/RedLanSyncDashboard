@@ -3,8 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#132125">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="SystemSync">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>SystemSync</title>
   <link id="faviconLink" rel="icon" href="/app-icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/app-icon.svg">
+  <link rel="manifest" href="/manifest.webmanifest">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -96,6 +102,23 @@
           <button class="button primary resume" id="resumeSyncButton" type="button" data-i18n="resumeSync">继续当前同步</button>
           <span id="resumeSyncHint" class="muted" data-i18n="resumeSyncHint">恢复暂停项并重新扫描当前同步文件夹</span>
         </div>
+
+        <section id="syncDiagnosticPanel" class="sync-diagnostic neutral" aria-live="polite">
+          <div class="sync-diagnostic-head">
+            <div>
+              <p class="eyebrow">SYNC DIAGNOSIS</p>
+              <h2 id="syncDiagnosticTitle">当前同步项目</h2>
+              <p id="syncDiagnosticSummary">正在读取同步诊断</p>
+            </div>
+            <button class="button secondary" id="syncDiagnosticToggle" type="button" data-i18n="diagnosticDetails">查看详情</button>
+          </div>
+          <div class="sync-diagnostic-metrics">
+            <div><span data-i18n="diagnosticFolder">项目/文件夹</span><strong id="diagnosticFolder">--</strong></div>
+            <div><span data-i18n="diagnosticRemaining">待同步</span><strong id="diagnosticRemaining">--</strong></div>
+            <div><span data-i18n="diagnosticNoProgress">无进度时间</span><strong id="diagnosticNoProgress">--</strong></div>
+          </div>
+          <div id="syncDiagnosticDetails" class="sync-diagnostic-details is-hidden"></div>
+        </section>
 
         <div class="section-heading">
           <div>
@@ -485,6 +508,12 @@
               <button class="button secondary" id="installDockButton" type="button" data-i18n="installDockShortcut">安装/刷新 Dock 快捷方式</button>
               <span id="dockShortcutPath" class="mono muted">--</span>
             </div>
+          </article>
+
+          <article class="device-card">
+            <h3 data-i18n="mobileSupportTitle">移动设备</h3>
+            <p data-i18n="mobileSupportBody">iPhone/iPad 可作为控制端；Android 可作为 Syncthing 节点或控制端。</p>
+            <div id="mobileAccessList" class="compact-list"><div class="empty-state" data-i18n="loading">读取中</div></div>
           </article>
         </div>
 

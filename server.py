@@ -37,7 +37,11 @@ CUSTOM_ICON_META_PATH = RUNTIME_ASSET_DIR / "app-icon.json"
 CONFIG_PATH = APP_DIR / "config.json"
 STATE_PATH = APP_DIR / "runtime-state.json"
 APP_DISPLAY_NAME = "SystemSync"
-APP_VERSION = "0.1.7"
+APP_VERSION = "0.1.8"
+SYNC_STALL_SECONDS = 120
+SYNC_NEED_SAMPLE_LIMIT = 12
+mimetypes.add_type("application/manifest+json", ".webmanifest")
+mimetypes.add_type("application/javascript", ".js")
 ICON_UPLOAD_TYPES = {
     "image/png": ("png", b"\x89PNG\r\n\x1a\n"),
     "image/jpeg": ("jpg", b"\xff\xd8"),
@@ -309,12 +313,17 @@ def remote_agent_request(path, method="GET", payload=None, timeout=2):
 def local_ip_candidates(config):
     addresses = []
     for value in (config.get("mac_ip"),):
-        if value and value not in addresses:
+        if value and value not in addresses and not str(value).startswith("169.254."):
             addresses.append(value)
     try:
         for item in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
             address = item[4][0]
-            if not address.startswith("127.") and address not in addresses:
+            if (
+                not address.startswith("127.")
+                and not address.startswith("169.254.")
+                and address != "0.0.0.0"
+                and address not in addresses
+            ):
                 addresses.append(address)
     except OSError:
         pass
@@ -513,6 +522,262 @@ def classify_sync_health(sync):
     return "healthy"
 
 
+def extract_need_items(payload, limit=SYNC_NEED_SAMPLE_LIMIT):
+    items = []
+    if not isinstance(payload, dict):
+        return items
+    for bucket in ("progress", "queued", "rest"):
+        for item in payload.get(bucket, []) or []:
+            if len(items) >= limit:
+                return items
+            if isinstance(item, dict):
+                name = item.get("name") or item.get("path") or item.get("file")
+                if name:
+                    items.append(
+                        {
+                            "path": str(name),
+                            "bucket": bucket,
+                            "size": int(item.get("size") or 0),
+                        }
+                    )
+            elif item:
+                items.append({"path": str(item), "bucket": bucket, "size": 0})
+    return items
+
+
+def folder_error_items(folder_id, limit=SYNC_NEED_SAMPLE_LIMIT):
+    try:
+        payload = syncthing_request("/rest/folder/errors?folder={}".format(urllib.parse.quote(folder_id)))
+    except Exception:
+        return []
+    errors = []
+    for item in ((payload.get("errors") or []) if isinstance(payload, dict) else []):
+        if len(errors) >= limit:
+            break
+        if isinstance(item, dict):
+            errors.append(
+                {
+                    "path": str(item.get("path") or item.get("file") or ""),
+                    "error": str(item.get("error") or item.get("message") or ""),
+                }
+            )
+    return errors
+
+
+def folder_need_items(folder_id):
+    try:
+        payload = syncthing_request(
+            "/rest/db/need?folder={}&page=1&perpage={}".format(
+                urllib.parse.quote(folder_id),
+                SYNC_NEED_SAMPLE_LIMIT,
+            )
+        )
+    except Exception:
+        return []
+    return extract_need_items(payload)
+
+
+def progress_sample(summary, now_epoch):
+    state = load_state()
+    samples = state.get("sync_progress_samples", {})
+    folder_id = summary["id"]
+    previous = samples.get(folder_id, {})
+    signature = {
+        "completion": float(summary.get("completion") or 0),
+        "need_bytes": int(summary.get("need_bytes") or 0),
+        "errors": int(summary.get("errors") or 0),
+        "folder_state": str(summary.get("folder_state") or ""),
+    }
+    previous_signature = previous.get("signature")
+    if previous_signature == signature:
+        changed_at = float(previous.get("changed_at") or now_epoch)
+    else:
+        changed_at = now_epoch
+    samples[folder_id] = {
+        "signature": signature,
+        "changed_at": changed_at,
+        "sampled_at": now_epoch,
+    }
+    update_state({"sync_progress_samples": samples})
+    return {
+        "last_progress_at": time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime(changed_at)),
+        "seconds_since_progress": max(0, round(now_epoch - changed_at)),
+    }
+
+
+def issue_for_folder(summary, remote, sync_error=""):
+    health = summary.get("health") or "unknown"
+    need_bytes = int(summary.get("need_bytes") or 0)
+    seconds_since_progress = int(summary.get("seconds_since_progress") or 0)
+    base = {
+        "folder_id": summary.get("id", ""),
+        "folder_label": summary.get("label", ""),
+        "folder_path": summary.get("path", ""),
+        "need_bytes": need_bytes,
+        "completion": summary.get("completion", 0),
+        "folder_state": summary.get("folder_state", ""),
+        "errors": summary.get("errors", 0),
+        "seconds_since_progress": seconds_since_progress,
+        "need_items": summary.get("need_items", []),
+        "folder_errors": summary.get("folder_errors", []),
+    }
+    if sync_error:
+        return {
+            **base,
+            "type": "api_error",
+            "severity": "error",
+            "actions": ["open_syncthing", "refresh"],
+            "message": sync_error,
+        }
+    if health == "error":
+        return {
+            **base,
+            "type": "folder_error",
+            "severity": "error",
+            "actions": ["open_syncthing", "run_naming_audit", "resume_sync"],
+        }
+    if health == "paused":
+        return {
+            **base,
+            "type": "paused",
+            "severity": "warning",
+            "actions": ["resume_sync", "open_syncthing"],
+        }
+    if health == "waiting":
+        actions = ["open_pairing", "wake_remote", "open_syncthing"]
+        if remote.get("agent_online"):
+            actions.insert(0, "resume_sync")
+        return {
+            **base,
+            "type": "remote_waiting",
+            "severity": "warning",
+            "actions": actions,
+        }
+    if need_bytes > 0 and seconds_since_progress >= SYNC_STALL_SECONDS:
+        return {
+            **base,
+            "type": "progress_timeout",
+            "severity": "warning",
+            "actions": ["resume_sync", "run_naming_audit", "open_syncthing"],
+        }
+    if health == "stalled":
+        return {
+            **base,
+            "type": "idle_with_pending",
+            "severity": "warning",
+            "actions": ["resume_sync", "run_naming_audit", "open_syncthing"],
+        }
+    return None
+
+
+def folder_summaries(config, primary=None):
+    folders = []
+    now_epoch = time.time()
+    try:
+        configured_folders = syncthing_request("/rest/config/folders")
+    except Exception:
+        configured_folders = []
+    if not configured_folders:
+        configured_folders = [
+            {
+                "id": config["syncthing_folder_id"],
+                "label": config["syncthing_folder_id"],
+                "path": config["sync_root"],
+            }
+        ]
+    for folder in configured_folders:
+        folder_id = str(folder.get("id") or "").strip()
+        if not folder_id:
+            continue
+        label = str(folder.get("label") or folder_id)
+        path = str(folder.get("path") or "")
+        summary = {
+            "id": folder_id,
+            "label": label,
+            "path": path,
+            "connected": bool(primary.get("connected")) if primary else False,
+            "completion": 0,
+            "need_bytes": 0,
+            "folder_state": "unknown",
+            "errors": 0,
+            "health": "unknown",
+            "need_items": [],
+            "folder_errors": [],
+        }
+        try:
+            completion = syncthing_request(
+                "/rest/db/completion?device={}&folder={}".format(
+                    urllib.parse.quote(config["remote_device_id"]),
+                    urllib.parse.quote(folder_id),
+                )
+            )
+            status = syncthing_request("/rest/db/status?folder={}".format(urllib.parse.quote(folder_id)))
+            summary.update(
+                {
+                    "completion": round(float(completion.get("completion", 0)), 2),
+                    "need_bytes": int(completion.get("needBytes", 0)),
+                    "folder_state": status.get("state", "unknown"),
+                    "errors": int(status.get("errors", 0)) + int(status.get("pullErrors", 0)),
+                    "global_bytes": int(completion.get("globalBytes", 0)),
+                    "global_items": int(completion.get("globalItems", 0)),
+                }
+            )
+            summary["health"] = classify_sync_health(summary)
+            if summary["need_bytes"] > 0 or summary["errors"] > 0:
+                summary["need_items"] = folder_need_items(folder_id)
+                summary["folder_errors"] = folder_error_items(folder_id)
+        except Exception as exc:
+            summary["health"] = "unavailable"
+            summary["error"] = str(exc)
+        summary.update(progress_sample(summary, now_epoch))
+        if summary["need_bytes"] > 0 and summary["seconds_since_progress"] >= SYNC_STALL_SECONDS:
+            summary["health"] = "stalled"
+        folders.append(summary)
+    return folders
+
+
+def sync_diagnostics(config, sync_status, remote):
+    folders = folder_summaries(config, sync_status if sync_status.get("available") else None)
+    priority = {"error": 0, "stalled": 1, "paused": 2, "waiting": 3, "syncing": 4, "healthy": 5}
+    current = next((item for item in folders if item["id"] == config["syncthing_folder_id"]), folders[0] if folders else {})
+    candidates = sorted(
+        folders,
+        key=lambda item: (
+            priority.get(item.get("health"), 9),
+            -int(item.get("need_bytes") or 0),
+            item.get("label") or item.get("id") or "",
+        ),
+    )
+    if candidates:
+        current = candidates[0]
+    issues = []
+    if not sync_status.get("available"):
+        issues.append(
+            {
+                "type": "api_error",
+                "severity": "error",
+                "folder_id": config["syncthing_folder_id"],
+                "folder_label": config["syncthing_folder_id"],
+                "folder_path": config["sync_root"],
+                "message": sync_status.get("error", ""),
+                "need_items": [],
+                "folder_errors": [],
+                "actions": ["open_syncthing", "refresh"],
+            }
+        )
+    for item in folders:
+        issue = issue_for_folder(item, remote)
+        if issue:
+            issues.append(issue)
+    return {
+        "timeout_seconds": SYNC_STALL_SECONDS,
+        "current": current,
+        "folders": folders,
+        "issues": issues,
+        "generated_at": now_iso(),
+    }
+
+
 def syncthing_overview():
     config = load_config()
     result = {
@@ -614,6 +879,7 @@ def remote_status(sync_status):
 def overview():
     config = load_config()
     sync_status = syncthing_overview()
+    remote = remote_status(sync_status)
     idle = local_idle_seconds()
     return {
         "timestamp": now_iso(),
@@ -624,10 +890,11 @@ def overview():
             "os": platform.platform(),
             "power_state": "idle" if idle is not None and idle > 900 else "online",
             "idle_seconds": idle,
-            "disks": disk_list(),
-        },
-        "remote": remote_status(sync_status),
+                "disks": disk_list(),
+            },
+        "remote": remote,
         "syncthing": sync_status,
+        "sync_diagnostics": sync_diagnostics(config, sync_status, remote),
         "jobs": job_list(),
     }
 
@@ -1482,6 +1749,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_json({"error": "Action requires localhost, companion token, or launcher-authenticated browser session"}, status=403)
         return False
 
+    def head_only(self):
+        return bool(getattr(self, "_head_only", False))
+
     def read_json(self):
         length = int(self.headers.get("Content-Length", "0"))
         if length > 6_000_000:
@@ -1496,7 +1766,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
-        self.wfile.write(data)
+        if not self.head_only():
+            self.wfile.write(data)
 
     def send_redirect(self, location, status=302, headers=None):
         data = b""
@@ -1507,6 +1778,10 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header(key, value)
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
+
+    def do_HEAD(self):
+        self._head_only = True
+        return self.do_GET()
 
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
@@ -1655,7 +1930,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-cache")
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
-        self.wfile.write(data)
+        if not self.head_only():
+            self.wfile.write(data)
 
     def serve_runtime_icon(self, request_path):
         filename = urllib.parse.unquote(request_path.rsplit("/", 1)[-1])
@@ -1671,7 +1947,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-cache")
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
-        self.wfile.write(data)
+        if not self.head_only():
+            self.wfile.write(data)
 
 
 def main():

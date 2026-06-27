@@ -49,7 +49,12 @@ def local_ip_candidates() -> list[str]:
     try:
         for item in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
             address = item[4][0]
-            if not address.startswith("127.") and address not in addresses:
+            if (
+                not address.startswith("127.")
+                and not address.startswith("169.254.")
+                and address != "0.0.0.0"
+                and address not in addresses
+            ):
                 addresses.append(address)
     except OSError:
         pass

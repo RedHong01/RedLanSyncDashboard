@@ -9,6 +9,7 @@ Mac Dock launcher
   -> mac/OpenDashboard.sh
   -> Python dashboard server on TCP 8765
     -> local Syncthing REST API on 127.0.0.1:8384
+    -> sync diagnosis sampler in runtime-state.json
     -> Windows companion agent on TCP 8766
       -> Windows Syncthing REST API
       -> Windows disk and power APIs
@@ -16,6 +17,10 @@ Windows browser
   -> OpenDashboard.ps1 smart launcher
   -> /auth token cookie
   -> Mac dashboard server on TCP 8765
+Mobile browser
+  -> Mac LAN dashboard URL
+  -> iOS/iPadOS control-only session
+  -> Android control session or Syncthing-node pairing
 Post-clone setup
   -> setup.sh on macOS
   -> setup.ps1 on Windows
@@ -26,6 +31,8 @@ Post-clone setup
 
 - `server.py`：HTTP server、Syncthing API bridge、Wake-on-LAN sender、任务 runner 和配对 API。
 - `server.py`: HTTP server, Syncthing API bridge, Wake-on-LAN sender, job runner, and pairing API.
+- `server.py` 的 overview 会采样每个 Syncthing 文件夹的进度、待同步量、错误和相关路径，写入 `runtime-state.json` 用于判断无进度超时。
+- `server.py` overview samples each Syncthing folder's progress, remaining bytes, errors, and related paths, then stores progress timestamps in `runtime-state.json` for no-progress timeout detection.
 - `project_packager.py`：跨平台文件名规划、安全副本 worker 和报告写入器。
 - `project_packager.py`: cross-platform filename planner, safe-copy worker, and report writer.
 - `/api/normalizations` 与 `/api/normalizations/report`：扫描并读取 `_CrossPlatformReport`，让网页集中管理规范化副本和改名映射。
@@ -77,6 +84,8 @@ Post-clone setup
 - Syncthing remains the file synchronization engine; this project orchestrates setup, visibility, and project hygiene.
 - 网页客户端由 Mac 控制端提供；其他设备推荐使用 Mac 局域网 IP，hosts 别名 `system-sync.local` 只是可选入口。`127.0.0.1` 只代表当前正在使用的那台电脑。
 - The web client is served by the Mac controller; other devices should prefer the Mac LAN IP, while the hosts alias `system-sync.local` is only an optional entry. `127.0.0.1` only means the computer currently using it.
+- iPhone/iPad 作为控制端使用浏览器会话；Android 可以只作为控制端，也可以安装 Syncthing 兼容客户端后作为同步节点加入。
+- iPhone/iPad use browser sessions as control devices; Android can be control-only or join as a sync node through a Syncthing-compatible client.
 
 ## 工程安全 / Project Safety
 

@@ -13,6 +13,7 @@ const state = {
   iconPath: "/app-icon.svg",
   polling: false,
   currentTab: "overview",
+  syncDiagnosticExpanded: false,
   lang: savedLanguage || ((navigator.language || "").toLowerCase().startsWith("zh") ? "zh" : "en"),
 };
 
@@ -95,6 +96,34 @@ const i18n = {
     dependencyUnityReview: "需要核对 Unity 版本/Packages",
     resumeSync: "继续当前同步",
     resumeSyncHint: "恢复暂停项并重新扫描当前同步文件夹",
+    diagnosticDetails: "查看详情",
+    diagnosticHide: "收起详情",
+    diagnosticFolder: "项目/文件夹",
+    diagnosticRemaining: "待同步",
+    diagnosticNoProgress: "无进度时间",
+    diagnosticHealthyTitle: "当前同步项目正常",
+    diagnosticHealthySummary: "没有发现阻塞项，当前项目可以继续同步。",
+    diagnosticIssueTitle: "发现同步阻塞",
+    diagnosticIssueSummary: "{folder}：{message}",
+    diagnosticCurrentTitle: "当前同步项目",
+    diagnosticPath: "路径",
+    diagnosticState: "状态",
+    diagnosticIssueList: "问题摘要",
+    diagnosticFiles: "相关路径/文件",
+    diagnosticNoFiles: "Syncthing 暂未返回具体文件路径",
+    diagnosticActions: "建议操作",
+    issueApiError: "Syncthing API 暂时不可用",
+    issueFolderError: "Syncthing 报告文件夹错误",
+    issuePaused: "同步文件夹或设备已暂停",
+    issueRemoteWaiting: "远端未连接，当前同步无法继续",
+    issueProgressTimeout: "超过 {seconds} 秒没有进度变化",
+    issueIdlePending: "仍有待同步数据，但文件夹处于 idle",
+    actionResume: "继续并重新扫描",
+    actionNaming: "检查非法命名",
+    actionSyncthing: "打开 Syncthing",
+    actionPairing: "检查配对",
+    actionWake: "唤醒远端",
+    actionRefresh: "刷新状态",
     quickSyncTitle: "新增同步文件夹",
     quickSyncHint: "为新工程同时指定 Mac 与 Windows 端路径",
     useNormalizedCopy: "使用规范化副本路径",
@@ -157,6 +186,13 @@ const i18n = {
     knownDevices: "已知设备",
     pendingDevices: "待确认设备",
     nonePending: "暂无待确认设备",
+    mobileSupportTitle: "移动设备",
+    mobileSupportBody: "iPhone/iPad 可作为控制端；Android 可作为 Syncthing 节点或控制端。",
+    mobileIosTitle: "iPhone / iPad",
+    mobileIosBody: "用 Safari 打开局域网控制台，可监控、唤醒、继续同步和配对设备。可添加到主屏幕作为图形入口。",
+    mobileAndroidTitle: "Android",
+    mobileAndroidBody: "可打开控制台，也可安装 Syncthing 兼容客户端作为同步节点；把 Android 设备 ID 粘贴到下方表单即可加入。",
+    mobileLanUrl: "手机入口",
     mobileLimitTitle: "手机说明",
     mobileLimitBody: "Android 可以通过 Syncthing 客户端加入同步；iPhone/iPad 通常只能打开这个控制台查看和触发操作，iOS 不适合做常驻 Syncthing 文件节点。",
     refreshNow: "立即刷新",
@@ -335,6 +371,34 @@ const i18n = {
     dependencyUnityReview: "Review Unity version/packages",
     resumeSync: "Resume Current Sync",
     resumeSyncHint: "Resume paused items and rescan the current sync folder",
+    diagnosticDetails: "View Details",
+    diagnosticHide: "Hide Details",
+    diagnosticFolder: "Project/Folder",
+    diagnosticRemaining: "Remaining",
+    diagnosticNoProgress: "No Progress",
+    diagnosticHealthyTitle: "Current sync project is healthy",
+    diagnosticHealthySummary: "No blocking issue was detected; the current project can continue syncing.",
+    diagnosticIssueTitle: "Sync block detected",
+    diagnosticIssueSummary: "{folder}: {message}",
+    diagnosticCurrentTitle: "Current Sync Project",
+    diagnosticPath: "Path",
+    diagnosticState: "State",
+    diagnosticIssueList: "Issue Summary",
+    diagnosticFiles: "Related Paths/Files",
+    diagnosticNoFiles: "Syncthing has not returned specific file paths yet",
+    diagnosticActions: "Suggested Actions",
+    issueApiError: "Syncthing API is currently unavailable",
+    issueFolderError: "Syncthing reports folder errors",
+    issuePaused: "The sync folder or device is paused",
+    issueRemoteWaiting: "Remote is disconnected, so sync cannot continue",
+    issueProgressTimeout: "No progress change for more than {seconds} seconds",
+    issueIdlePending: "Data remains, but the folder is idle",
+    actionResume: "Resume and Rescan",
+    actionNaming: "Check Unsafe Names",
+    actionSyncthing: "Open Syncthing",
+    actionPairing: "Check Pairing",
+    actionWake: "Wake Remote",
+    actionRefresh: "Refresh Status",
     quickSyncTitle: "Add Sync Folder",
     quickSyncHint: "Set both Mac and Windows paths for a new project",
     useNormalizedCopy: "Use Normalized Copy Path",
@@ -397,6 +461,13 @@ const i18n = {
     knownDevices: "Known Devices",
     pendingDevices: "Pending Devices",
     nonePending: "No pending devices",
+    mobileSupportTitle: "Mobile Devices",
+    mobileSupportBody: "iPhone/iPad can work as control devices; Android can work as a Syncthing node or controller.",
+    mobileIosTitle: "iPhone / iPad",
+    mobileIosBody: "Open the LAN dashboard in Safari to monitor, wake, resume sync, and pair devices. Add it to the Home Screen for a graphical entry.",
+    mobileAndroidTitle: "Android",
+    mobileAndroidBody: "Open the dashboard for control, or install a Syncthing-compatible client to join as a sync node; paste the Android device ID below to add it.",
+    mobileLanUrl: "Mobile URL",
     mobileLimitTitle: "Mobile Note",
     mobileLimitBody: "Android can join sync with a Syncthing client. iPhone/iPad can usually open this controller for monitoring and actions, but iOS is not suitable as an always-on Syncthing file node.",
     refreshNow: "Refresh now",
@@ -732,6 +803,120 @@ function healthClass(health) {
   return "";
 }
 
+function diagnosticIssueMessage(issue) {
+  const key = {
+    api_error: "issueApiError",
+    folder_error: "issueFolderError",
+    paused: "issuePaused",
+    remote_waiting: "issueRemoteWaiting",
+    progress_timeout: "issueProgressTimeout",
+    idle_with_pending: "issueIdlePending",
+  }[issue.type] || "healthUnknown";
+  return t(key, { seconds: issue.seconds_since_progress || 0 });
+}
+
+function diagnosticActionLabel(action) {
+  const key = {
+    resume_sync: "actionResume",
+    run_naming_audit: "actionNaming",
+    open_syncthing: "actionSyncthing",
+    open_pairing: "actionPairing",
+    wake_remote: "actionWake",
+    refresh: "actionRefresh",
+  }[action] || "diagnosticDetails";
+  return t(key);
+}
+
+function diagnosticSeverityClass(issues) {
+  if (!issues || !issues.length) return "safe";
+  return issues.some((issue) => issue.severity === "error") ? "error" : "warning";
+}
+
+function diagnosticFileRows(issues) {
+  const rows = [];
+  (issues || []).forEach((issue) => {
+    (issue.folder_errors || []).forEach((item) => {
+      rows.push({ path: item.path || issue.folder_path || "", detail: item.error || diagnosticIssueMessage(issue) });
+    });
+    (issue.need_items || []).forEach((item) => {
+      rows.push({ path: item.path || issue.folder_path || "", detail: item.bucket || "" });
+    });
+  });
+  return rows.slice(0, 16);
+}
+
+function diagnosticActionButtons(issues) {
+  const actions = [];
+  (issues || []).forEach((issue) => {
+    (issue.actions || []).forEach((action) => {
+      if (!actions.includes(action)) actions.push(action);
+    });
+  });
+  return actions;
+}
+
+function renderSyncDiagnostics(diagnostics, sync, config) {
+  const panel = $("syncDiagnosticPanel");
+  const issues = diagnostics?.issues || [];
+  const current = diagnostics?.current || {};
+  const firstIssue = issues[0] || null;
+  const severity = diagnosticSeverityClass(issues);
+  const currentLabel = current.label || current.id || config.syncthing_folder_id || "--";
+  panel.className = `sync-diagnostic ${severity}`;
+
+  $("syncDiagnosticTitle").textContent = firstIssue ? t("diagnosticIssueTitle") : t("diagnosticHealthyTitle");
+  $("syncDiagnosticSummary").textContent = firstIssue
+    ? t("diagnosticIssueSummary", { folder: firstIssue.folder_label || firstIssue.folder_id || currentLabel, message: diagnosticIssueMessage(firstIssue) })
+    : t("diagnosticHealthySummary");
+  $("diagnosticFolder").textContent = currentLabel;
+  $("diagnosticRemaining").textContent = formatBytes(current.need_bytes ?? sync.need_bytes);
+  $("diagnosticNoProgress").textContent = formatDuration(current.seconds_since_progress || 0);
+  $("syncDiagnosticToggle").textContent = state.syncDiagnosticExpanded ? t("diagnosticHide") : t("diagnosticDetails");
+
+  const files = diagnosticFileRows(issues);
+  const actions = diagnosticActionButtons(issues);
+  const issueRows = issues.length
+    ? issues.map((issue) => `
+      <div class="diagnostic-issue">
+        <strong>${escapeHtml(issue.folder_label || issue.folder_id || "--")}</strong>
+        <span>${escapeHtml(diagnosticIssueMessage(issue))}</span>
+      </div>
+    `).join("")
+    : `<div class="diagnostic-issue"><strong>${escapeHtml(currentLabel)}</strong><span>${escapeHtml(t(syncHealthKey(current.health || sync.health)))}</span></div>`;
+  const fileRows = files.length
+    ? files.map((item) => `
+      <div class="diagnostic-file">
+        <strong>${escapeHtml(item.path || "--")}</strong>
+        <span>${escapeHtml(item.detail || "")}</span>
+      </div>
+    `).join("")
+    : `<div class="empty-state">${escapeHtml(t("diagnosticNoFiles"))}</div>`;
+  const actionRows = actions.length
+    ? actions.map((action) => `<button class="button secondary" type="button" data-diagnostic-action="${escapeHtml(action)}">${escapeHtml(diagnosticActionLabel(action))}</button>`).join("")
+    : `<button class="button secondary" type="button" data-diagnostic-action="refresh">${escapeHtml(diagnosticActionLabel("refresh"))}</button>`;
+
+  $("syncDiagnosticDetails").classList.toggle("is-hidden", !state.syncDiagnosticExpanded);
+  $("syncDiagnosticDetails").innerHTML = `
+    <div class="diagnostic-current">
+      <div><span>${escapeHtml(t("diagnosticCurrentTitle"))}</span><strong>${escapeHtml(currentLabel)}</strong></div>
+      <div><span>${escapeHtml(t("diagnosticPath"))}</span><strong title="${escapeHtml(current.path || "")}">${escapeHtml(current.path || "--")}</strong></div>
+      <div><span>${escapeHtml(t("diagnosticState"))}</span><strong>${escapeHtml(t(syncHealthKey(current.health || sync.health)))}</strong></div>
+    </div>
+    <div class="diagnostic-section">
+      <span>${escapeHtml(t("diagnosticIssueList"))}</span>
+      ${issueRows}
+    </div>
+    <div class="diagnostic-section">
+      <span>${escapeHtml(t("diagnosticFiles"))}</span>
+      <div class="diagnostic-files">${fileRows}</div>
+    </div>
+    <div class="diagnostic-section">
+      <span>${escapeHtml(t("diagnosticActions"))}</span>
+      <div class="diagnostic-actions">${actionRows}</div>
+    </div>
+  `;
+}
+
 function renderOverview(data) {
   state.overview = data;
   const config = data.config;
@@ -800,6 +985,7 @@ function renderOverview(data) {
     $("quickProjectRemotePath").value = `${config.remote_project_base}\\New_Project`;
   }
 
+  renderSyncDiagnostics(data.sync_diagnostics || {}, sync, config);
   renderJobs(data.jobs || []);
   renderDisks(local.disks || [], remoteAgent.disks || []);
 }
@@ -1378,6 +1564,25 @@ function useDestinationForSync() {
   toast(t("quickPathCopied"));
 }
 
+function renderMobileSupport(urls) {
+  const mobileUrl = preferredLanDashboardUrl(urls || []);
+  const list = $("mobileAccessList");
+  if (!list) return;
+  list.innerHTML = `
+    <button class="copy-link url-lan" type="button" data-copy="${escapeHtml(mobileUrl)}">
+      <span><strong>${escapeHtml(mobileUrl || "--")}</strong><small>${escapeHtml(t("mobileLanUrl"))}</small></span><em>${escapeHtml(t("copyAction"))}</em>
+    </button>
+    <div class="compact-row">
+      <strong>${escapeHtml(t("mobileIosTitle"))}</strong>
+      <span>${escapeHtml(t("mobileIosBody"))}</span>
+    </div>
+    <div class="compact-row">
+      <strong>${escapeHtml(t("mobileAndroidTitle"))}</strong>
+      <span>${escapeHtml(t("mobileAndroidBody"))}</span>
+    </div>
+  `;
+}
+
 function renderPairing(data) {
   state.pairing = data;
   const urls = data.controller.dashboard_urls || [];
@@ -1391,6 +1596,7 @@ function renderPairing(data) {
     `;
     }).join("")
     : `<div class="empty-state">${escapeHtml(t("loading"))}</div>`;
+  renderMobileSupport(urls);
   $("controllerDeviceId").textContent = data.controller.device_id || "--";
   const dock = data.dock || {};
   updateAppIcon(data.icon || { path: dock.icon_path });
@@ -1553,6 +1759,13 @@ function dismissUpdateBubble() {
   $("updateBubble").classList.add("is-hidden");
 }
 
+function registerMobileShell() {
+  if (!("serviceWorker" in navigator)) return;
+  const isLocalhost = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
+  if (!window.isSecureContext && !isLocalhost) return;
+  navigator.serviceWorker.register("/service-worker.js").catch(() => undefined);
+}
+
 async function addDevice(event) {
   event.preventDefault();
   const button = $("addDeviceButton");
@@ -1592,6 +1805,32 @@ async function copyText(value) {
     textarea.remove();
   }
   toast(t("copied"));
+}
+
+function runDiagnosticAction(action) {
+  if (action === "resume_sync") {
+    resumeSync();
+    return;
+  }
+  if (action === "run_naming_audit") {
+    const current = state.overview?.sync_diagnostics?.current || {};
+    if (current.path) $("sourcePath").value = current.path;
+    setTab("naming");
+    return;
+  }
+  if (action === "open_syncthing") {
+    window.open("http://127.0.0.1:8384", "_blank", "noreferrer");
+    return;
+  }
+  if (action === "open_pairing") {
+    setTab("pairing");
+    return;
+  }
+  if (action === "wake_remote") {
+    wakeRemote();
+    return;
+  }
+  refreshOverview(true);
 }
 
 function setTab(tab) {
@@ -1645,6 +1884,10 @@ $("customIconFile").addEventListener("change", (event) => {
 $("uploadIconButton").addEventListener("click", uploadCustomIcon);
 $("resetIconButton").addEventListener("click", resetCustomIcon);
 $("dismissUpdateBubble").addEventListener("click", dismissUpdateBubble);
+$("syncDiagnosticToggle").addEventListener("click", () => {
+  state.syncDiagnosticExpanded = !state.syncDiagnosticExpanded;
+  if (state.overview) renderOverview(state.overview);
+});
 $("copyDashboardUrl").addEventListener("click", () => copyText(preferredLanDashboardUrl(state.pairing?.controller?.dashboard_urls || [])));
 $("copyControllerId").addEventListener("click", () => copyText(state.pairing?.controller?.device_id || ""));
 
@@ -1659,6 +1902,11 @@ document.addEventListener("click", (event) => {
     loadNormalizationReport(reportButton.dataset.reportPath || "");
     return;
   }
+  const diagnosticButton = event.target.closest("[data-diagnostic-action]");
+  if (diagnosticButton) {
+    runDiagnosticAction(diagnosticButton.dataset.diagnosticAction || "refresh");
+    return;
+  }
   const pendingButton = event.target.closest(".use-pending");
   if (pendingButton) {
     $("newDeviceId").value = pendingButton.dataset.deviceId || "";
@@ -1667,6 +1915,7 @@ document.addEventListener("click", (event) => {
 });
 
 applyTranslations();
+registerMobileShell();
 refreshOverview(true);
 refreshNormalizationReports();
 checkUpdates();

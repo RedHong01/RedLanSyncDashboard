@@ -8,6 +8,8 @@ SystemSync is a local-first LAN control panel for a Mac/Windows Syncthing pair. 
 
 - 显示 Syncthing 同步进度、连接方式、文件夹状态和最近任务。
 - Shows Syncthing progress, connection type, folder state, and recent operations.
+- 在总览页显示当前同步项目、疑似卡住项目、无进度时间、相关路径/文件和建议处理动作。
+- Shows the current sync project, suspected blocked project, no-progress time, related paths/files, and suggested recovery actions on the overview page.
 - 在同步前扫描工程文件夹，检查 Windows/macOS 文件名兼容问题。
 - Scans project folders for Windows/macOS filename problems before sync.
 - 默认创建规范化副本；也可单独预览源路径改名清单，确认后才把源工程名称同步为规范名。
@@ -28,6 +30,10 @@ SystemSync is a local-first LAN control panel for a Mac/Windows Syncthing pair. 
 - Sends Wake-on-LAN packets when firmware and network settings support it.
 - 提供新电脑或 Android Syncthing 客户端的配对页面。
 - Provides a pairing page for new computers or Android Syncthing clients.
+- 提供移动设备入口：iPhone/iPad 作为控制端，Android 可作为控制端或 Syncthing 节点。
+- Provides mobile entries: iPhone/iPad as control devices, and Android as either a controller or a Syncthing node.
+- 提供移动 Web 应用元信息，便于添加到主屏幕；HTTPS 或 localhost 下会启用控制台壳缓存。
+- Provides mobile web app metadata for Home Screen shortcuts; the controller shell cache is enabled on HTTPS or localhost.
 - Mac Dock 与 Windows 桌面/开始菜单使用同一类 `SystemSync` 智能启动器：Mac 本机优先用 `127.0.0.1`，Windows/其他设备优先用 Mac 局域网 IP，`system-sync.local` 只是 hosts 可用时的可选别名。
 - The Mac Dock and Windows desktop/Start Menu use the same kind of `SystemSync` smart launcher: Mac prefers `127.0.0.1`, Windows and other devices prefer the Mac LAN IP, and `system-sync.local` is only an optional alias when hosts is configured.
 - 检查配置的 GitHub 仓库是否有新版本，并显示更新预览气泡。
