@@ -1,5 +1,5 @@
 param(
-    [string]$ConfigPath = "$env:ProgramData\RedLanSyncAgent\agent-config.json",
+    [string]$ConfigPath = "$env:ProgramData\SystemSyncAgent\agent-config.json",
     [int]$TimeoutSeconds = 3
 )
 
@@ -11,6 +11,8 @@ function Read-DashboardConfig {
 
     $candidates = @(
         $Path,
+        "$env:ProgramData\SystemSyncAgent\agent-config.json",
+        "$env:ProgramData\RedLanSyncAgent\agent-config.json",
         (Join-Path $PSScriptRoot "agent-config.json"),
         (Join-Path $PSScriptRoot "agent-config.generated.json")
     )
@@ -19,7 +21,7 @@ function Read-DashboardConfig {
             return Get-Content -LiteralPath $candidate -Raw | ConvertFrom-Json
         }
     }
-    throw "No Red LAN Sync agent config was found. Run windows/install-agent.ps1 first."
+    throw "No SystemSync agent config was found. Run windows/install-agent.ps1 first."
 }
 
 function Add-Candidate {
@@ -73,7 +75,7 @@ function Show-OpenDashboardError {
     )
 
     $message = @(
-        "Red LAN Sync Dashboard is not reachable.",
+        "SystemSync is not reachable.",
         "",
         "Tried:",
         (($Candidates | ForEach-Object { "- $($_.Url) [$($_.Label)]" }) -join "`n"),
@@ -83,7 +85,7 @@ function Show-OpenDashboardError {
 
     try {
         $shell = New-Object -ComObject WScript.Shell
-        [void]$shell.Popup($message, 0, "Red LAN Sync Dashboard", 48)
+        [void]$shell.Popup($message, 0, "SystemSync", 48)
     }
     catch {
         Write-Host $message

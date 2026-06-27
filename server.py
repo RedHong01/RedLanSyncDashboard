@@ -36,7 +36,8 @@ RUNTIME_ASSET_DIR = APP_DIR / "runtime-assets"
 CUSTOM_ICON_META_PATH = RUNTIME_ASSET_DIR / "app-icon.json"
 CONFIG_PATH = APP_DIR / "config.json"
 STATE_PATH = APP_DIR / "runtime-state.json"
-APP_VERSION = "0.1.2"
+APP_DISPLAY_NAME = "SystemSync"
+APP_VERSION = "0.1.3"
 ICON_UPLOAD_TYPES = {
     "image/png": ("png", b"\x89PNG\r\n\x1a\n"),
     "image/jpeg": ("jpg", b"\xff\xd8"),
@@ -45,7 +46,7 @@ ICON_UPLOAD_TYPES = {
 DEFAULT_CONFIG = {
     "listen_host": "0.0.0.0",
     "listen_port": 8765,
-    "dashboard_alias": "red-lan-sync.local",
+    "dashboard_alias": "system-sync.local",
     "local_name": "MacWorkstation",
     "remote_name": "WindowsWorkstation",
     "remote_ip": "",
@@ -59,7 +60,7 @@ DEFAULT_CONFIG = {
     "remote_project_base": "D:\\LanSyncProjects",
     "mac_ip": "",
     "mac_mac": "",
-    "github_repo": "",
+    "github_repo": "RedHong01/SystemSync",
     "current_version": APP_VERSION,
     "shared_token": "",
 }
@@ -183,7 +184,7 @@ def current_icon_info():
         "path": "/app-icon.svg",
         "custom": False,
         "mime": "image/svg+xml",
-        "name": "Red LAN Sync",
+        "name": APP_DISPLAY_NAME,
         "updated_at": "",
     }
 
@@ -859,6 +860,211 @@ def dependency_audit(payload):
     return result
 
 
+NORMALIZATION_REPORT_DIR = "_CrossPlatformReport"
+REPORT_SCAN_EXCLUDES = {
+    ".git",
+    ".stfolder",
+    ".stversions",
+    "node_modules",
+    "Library",
+    "__pycache__",
+    "_DependencyBundle",
+}
+
+
+def safe_int(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def report_timestamp(path):
+    try:
+        return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(path.stat().st_mtime))
+    except OSError:
+        return ""
+
+
+def is_normalization_report_dir(path):
+    return path.name == NORMALIZATION_REPORT_DIR and (path / "summary.json").is_file()
+
+
+def read_report_json(report_dir, filename, default):
+    path = report_dir / filename
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return default.copy() if hasattr(default, "copy") else default
+
+
+def project_file_counts(summary):
+    files = summary.get("project_files") if isinstance(summary, dict) else {}
+    if not isinstance(files, dict):
+        return {}
+    return {key: len(value) for key, value in files.items() if isinstance(value, list) and value}
+
+
+def normalization_report_summary(report_dir):
+    report_dir = Path(report_dir).expanduser().resolve()
+    if not is_normalization_report_dir(report_dir):
+        raise ValueError("Not a normalization report directory: {}".format(report_dir))
+    summary = read_report_json(report_dir, "summary.json", {})
+    rename_map = read_report_json(report_dir, "rename_map.json", [])
+    collisions = read_report_json(report_dir, "collisions.json", [])
+    skipped = read_report_json(report_dir, "skipped.json", [])
+    destination = str(summary.get("destination") or report_dir.parent)
+    source = str(summary.get("source") or "")
+    renamed = safe_int(summary.get("renamed_entries"), len(rename_map) if isinstance(rename_map, list) else 0)
+    collision_count = safe_int(summary.get("collision_resolutions"), len(collisions) if isinstance(collisions, list) else 0)
+    skipped_count = safe_int(summary.get("skipped_entries"), len(skipped) if isinstance(skipped, list) else 0)
+    warnings = summary.get("warnings") if isinstance(summary.get("warnings"), list) else []
+    post_copy_risks = summary.get("post_copy_risks") if isinstance(summary.get("post_copy_risks"), list) else []
+    unity_meta_issues = summary.get("unity_meta_pair_issues") if isinstance(summary.get("unity_meta_pair_issues"), list) else []
+    return {
+        "report_dir": str(report_dir),
+        "display_name": Path(destination).name or report_dir.parent.name,
+        "source": source,
+        "destination": destination,
+        "executed": bool(summary.get("executed", True)),
+        "generated_at": str(summary.get("generated_at") or ""),
+        "updated_at": report_timestamp(report_dir),
+        "total_entries": safe_int(summary.get("total_entries")),
+        "renamed_entries": renamed,
+        "skipped_entries": skipped_count,
+        "collision_resolutions": collision_count,
+        "warning_count": len(warnings),
+        "post_copy_risk_count": len(post_copy_risks),
+        "unity_meta_issue_count": len(unity_meta_issues),
+        "project_file_counts": project_file_counts(summary),
+        "paths": {
+            "summary": str(report_dir / "summary.json"),
+            "rename_map": str(report_dir / "rename_map.json"),
+            "collisions": str(report_dir / "collisions.json"),
+            "skipped": str(report_dir / "skipped.json"),
+        },
+    }
+
+
+def report_candidates_from_path(value):
+    if not value:
+        return []
+    try:
+        candidate = Path(value).expanduser().resolve()
+    except (OSError, RuntimeError, ValueError):
+        return []
+    if candidate.name == NORMALIZATION_REPORT_DIR:
+        return [candidate]
+    return [candidate / NORMALIZATION_REPORT_DIR]
+
+
+def iter_normalization_report_dirs(root, max_reports=120):
+    try:
+        root = Path(root).expanduser().resolve()
+    except (OSError, RuntimeError, ValueError):
+        return
+    if not root.is_dir():
+        return
+    found = 0
+    for current, dirs, files in os.walk(root):
+        current_path = Path(current)
+        if current_path.name == NORMALIZATION_REPORT_DIR and "summary.json" in files:
+            yield current_path
+            found += 1
+            dirs[:] = []
+            if found >= max_reports:
+                return
+            continue
+        dirs[:] = [name for name in dirs if name not in REPORT_SCAN_EXCLUDES and not name.startswith(".")]
+
+
+def list_normalization_reports(root_value="", candidates=None):
+    config = load_config()
+    roots = []
+    if root_value:
+        roots.append(root_value)
+    if config.get("sync_root"):
+        roots.append(config["sync_root"])
+
+    report_dirs = []
+    with JOBS_LOCK:
+        for job in JOBS.values():
+            if job.get("report_dir"):
+                report_dirs.extend(report_candidates_from_path(job.get("report_dir")))
+            elif job.get("destination"):
+                report_dirs.extend(report_candidates_from_path(job.get("destination")))
+    for candidate in candidates or []:
+        report_dirs.extend(report_candidates_from_path(candidate))
+    for root in roots:
+        report_dirs.extend(iter_normalization_report_dirs(root) or [])
+
+    seen = set()
+    reports = []
+    errors = []
+    for report_dir in report_dirs:
+        try:
+            resolved = Path(report_dir).expanduser().resolve()
+            key = os.path.normcase(str(resolved))
+            if key in seen or not is_normalization_report_dir(resolved):
+                continue
+            seen.add(key)
+            reports.append(normalization_report_summary(resolved))
+        except Exception as exc:
+            errors.append(str(exc))
+    reports.sort(key=lambda item: item.get("updated_at") or item.get("generated_at") or "", reverse=True)
+    return {"reports": reports, "count": len(reports), "errors": errors[:10], "scan_roots": list(dict.fromkeys(str(item) for item in roots if item))}
+
+
+def normalization_report_detail(report_dir_value, limit=500):
+    report_dir = Path(report_dir_value).expanduser().resolve()
+    summary = normalization_report_summary(report_dir)
+    limit = max(1, min(safe_int(limit, 500), 5000))
+    rename_map = read_report_json(report_dir, "rename_map.json", [])
+    collisions = read_report_json(report_dir, "collisions.json", [])
+    skipped = read_report_json(report_dir, "skipped.json", [])
+    raw_summary = read_report_json(report_dir, "summary.json", {})
+    warnings = raw_summary.get("warnings") if isinstance(raw_summary.get("warnings"), list) else []
+    post_copy_risks = raw_summary.get("post_copy_risks") if isinstance(raw_summary.get("post_copy_risks"), list) else []
+    unity_meta_issues = raw_summary.get("unity_meta_pair_issues") if isinstance(raw_summary.get("unity_meta_pair_issues"), list) else []
+    if not isinstance(rename_map, list):
+        rename_map = []
+    if not isinstance(collisions, list):
+        collisions = []
+    if not isinstance(skipped, list):
+        skipped = []
+    summary.update(
+        {
+            "rename_map": rename_map[:limit],
+            "rename_map_total": len(rename_map),
+            "rename_map_truncated": len(rename_map) > limit,
+            "collisions": collisions[:limit],
+            "skipped": skipped[:limit],
+            "warnings": warnings[:limit],
+            "post_copy_risks": post_copy_risks[:limit],
+            "unity_meta_pair_issues": unity_meta_issues[:limit],
+        }
+    )
+    return summary
+
+
+def reveal_normalization_path(payload):
+    if platform.system() != "Darwin":
+        return {"ok": False, "supported": False, "message": "Reveal is only supported on macOS controller hosts"}
+    report_dir = Path(payload.get("report_dir", "")).expanduser().resolve()
+    detail = normalization_report_detail(str(report_dir), limit=1)
+    target_name = str(payload.get("target") or "destination")
+    targets = {
+        "report": report_dir,
+        "destination": Path(detail["destination"]),
+        "source": Path(detail["source"]) if detail.get("source") else report_dir,
+    }
+    target = targets.get(target_name, targets["destination"])
+    if not target.exists():
+        target = report_dir
+    subprocess.run(["/usr/bin/open", str(target)], check=False, timeout=10)
+    return {"ok": True, "supported": True, "target": str(target)}
+
+
 def job_list():
     with JOBS_LOCK:
         return sorted((dict(value) for value in JOBS.values()), key=lambda item: item["created_at"], reverse=True)
@@ -1044,8 +1250,8 @@ def pairing_info():
         syncthing_error = str(exc)
 
     urls = dashboard_urls(config)
-    windows_tool_path = str(Path(config["sync_root"]) / "_tools" / "LanSyncDashboardWindows")
-    dock_app_path = str(Path.home() / "Applications" / "Red LAN Sync.app")
+    windows_tool_path = str(Path(config["sync_root"]) / "_tools" / "SystemSyncWindows")
+    dock_app_path = str(Path.home() / "Applications" / "SystemSync.app")
     icon = current_icon_info()
     return {
         "controller": {
@@ -1102,7 +1308,7 @@ def install_dock_shortcut():
     )
     if result.returncode != 0:
         raise RuntimeError((result.stderr or result.stdout or "Dock installer failed").strip())
-    app_path = str(Path.home() / "Applications" / "Red LAN Sync.app")
+    app_path = str(Path.home() / "Applications" / "SystemSync.app")
     return {"ok": True, "supported": True, "app_path": app_path, "output": result.stdout.strip()}
 
 
@@ -1178,7 +1384,7 @@ def github_api(path):
         "https://api.github.com{}".format(path),
         headers={
             "Accept": "application/vnd.github+json",
-            "User-Agent": "Red-LAN-Sync-Dashboard/{}".format(APP_VERSION),
+            "User-Agent": "SystemSync/{}".format(APP_VERSION),
         },
         timeout=6,
     )
@@ -1250,7 +1456,7 @@ def check_github_update():
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "LanSyncDashboard/1.0"
+    server_version = "SystemSync/1.0"
 
     def log_message(self, fmt, *args):
         print("{} - {}".format(self.address_string(), fmt % args), flush=True)
@@ -1325,6 +1531,12 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json(pairing_info())
             if path == "/api/update/check":
                 return self.send_json(check_github_update())
+            if path == "/api/normalizations":
+                query = urllib.parse.parse_qs(parsed.query)
+                return self.send_json(list_normalization_reports((query.get("root") or [""])[0], query.get("candidate") or []))
+            if path == "/api/normalizations/report":
+                query = urllib.parse.parse_qs(parsed.query)
+                return self.send_json(normalization_report_detail((query.get("path") or [""])[0], (query.get("limit") or [500])[0]))
             if path == "/api/jobs":
                 return self.send_json({"jobs": job_list()})
             if path == "/api/disks":
@@ -1396,6 +1608,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json(apply_source_renames(payload))
             if path == "/api/dependencies/audit":
                 return self.send_json(dependency_audit(payload))
+            if path == "/api/normalizations/reveal":
+                return self.send_json(reveal_normalization_path(payload))
             if path == "/api/wake":
                 mac = payload.get("mac") or load_config()["remote_mac"]
                 return self.send_json({"ok": True, "sent_to": send_magic_packet(mac)})
@@ -1460,7 +1674,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="LAN Sync companion dashboard")
+    parser = argparse.ArgumentParser(description="SystemSync companion dashboard")
     parser.add_argument("--host")
     parser.add_argument("--port", type=int)
     args = parser.parse_args()
@@ -1468,7 +1682,7 @@ def main():
     host = args.host or config["listen_host"]
     port = args.port or int(config["listen_port"])
     server = ThreadingHTTPServer((host, port), Handler)
-    print("LAN Sync Dashboard: http://127.0.0.1:{}".format(port), flush=True)
+    print("SystemSync: http://127.0.0.1:{}".format(port), flush=True)
     alias = dashboard_alias(config)
     if alias:
         print("Friendly alias: http://{}:{}".format(alias, port), flush=True)

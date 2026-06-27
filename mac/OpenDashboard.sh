@@ -35,6 +35,8 @@ SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" >/dev/null 2>&1 && pwd -P)"
 if [[ -z "$ROOT_DIR" ]]; then
     if [[ -f "$SCRIPT_DIR/../server.py" ]]; then
         ROOT_DIR="$(cd "$SCRIPT_DIR/.." >/dev/null 2>&1 && pwd -P)"
+    elif [[ -f "$HOME/Library/Application Support/SystemSync/server.py" ]]; then
+        ROOT_DIR="$HOME/Library/Application Support/SystemSync"
     else
         ROOT_DIR="$HOME/Library/Application Support/RedLanSyncDashboard"
     fi
@@ -43,6 +45,8 @@ fi
 if [[ -z "$CONFIG_PATH" ]]; then
     if [[ -f "$ROOT_DIR/config.json" ]]; then
         CONFIG_PATH="$ROOT_DIR/config.json"
+    elif [[ -f "$HOME/Library/Application Support/SystemSync/config.json" ]]; then
+        CONFIG_PATH="$HOME/Library/Application Support/SystemSync/config.json"
     elif [[ -f "$HOME/Library/Application Support/RedLanSyncDashboard/config.json" ]]; then
         CONFIG_PATH="$HOME/Library/Application Support/RedLanSyncDashboard/config.json"
     else
@@ -64,7 +68,7 @@ from pathlib import Path
 path = Path(sys.argv[1]).expanduser()
 defaults = {
     "listen_port": 8765,
-    "dashboard_alias": "red-lan-sync.local",
+    "dashboard_alias": "system-sync.local",
     "mac_ip": "",
     "shared_token": "",
 }
@@ -100,6 +104,7 @@ if [[ -n "$mac_ip" ]]; then
 fi
 
 try_start_service() {
+    /bin/launchctl kickstart -k "gui/$UID/com.redwang.systemsync" >/dev/null 2>&1 || true
     /bin/launchctl kickstart -k "gui/$UID/com.redwang.lansyncdashboard" >/dev/null 2>&1 || true
 }
 
@@ -148,7 +153,7 @@ if open_first_reachable; then
     exit 0
 fi
 
-message="Red LAN Sync Dashboard is not reachable.
+message="SystemSync is not reachable.
 
 Tried:
 $(printf "%s" "$candidate_urls" | sed '/^$/d' | sed 's/^/- /')

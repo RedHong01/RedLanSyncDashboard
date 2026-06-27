@@ -145,7 +145,7 @@ def write_png(path: Path, size: int, pixels: list[tuple[int, int, int, int]]) ->
 
 def main() -> int:
     if len(sys.argv) != 2:
-        print("usage: generate_app_icon.py /path/to/RedLanSync.iconset", file=sys.stderr)
+        print("usage: generate_app_icon.py /path/to/SystemSync.iconset", file=sys.stderr)
         return 2
     iconset = Path(sys.argv[1])
     iconset.mkdir(parents=True, exist_ok=True)

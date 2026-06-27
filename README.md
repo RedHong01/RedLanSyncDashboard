@@ -1,8 +1,8 @@
-# Red LAN Sync Dashboard / 红色局域网同步控制台
+# SystemSync / 红色局域网同步控制台
 
-Red LAN Sync Dashboard 是一个本地优先的 Mac/Windows Syncthing 局域网同步控制台。它在 Syncthing 之上增加工程文件命名检查、安全副本规范化、双端状态、Wake-on-LAN、目标磁盘选择、新设备配对、GitHub 更新预览，以及中英文网页界面。
+SystemSync 是一个本地优先的 Mac/Windows Syncthing 局域网同步控制台。它在 Syncthing 之上增加工程文件命名检查、安全副本规范化、双端状态、Wake-on-LAN、目标磁盘选择、新设备配对、GitHub 更新预览，以及中英文网页界面。
 
-Red LAN Sync Dashboard is a local-first LAN control panel for a Mac/Windows Syncthing pair. It adds project-safe filename auditing, safe-copy normalization, device presence, Wake-on-LAN, storage target selection, new device pairing, GitHub update previews, and a bilingual Chinese/English web UI.
+SystemSync is a local-first LAN control panel for a Mac/Windows Syncthing pair. It adds project-safe filename auditing, safe-copy normalization, device presence, Wake-on-LAN, storage target selection, new device pairing, GitHub update previews, and a bilingual Chinese/English web UI.
 
 ## 功能 / What It Does
 
@@ -14,6 +14,8 @@ Red LAN Sync Dashboard is a local-first LAN control panel for a Mac/Windows Sync
 - Creates a normalized copy by default; source-path renames are previewed separately and applied only after confirmation.
 - 写入 `_CrossPlatformReport`，包含映射 JSON/CSV 和 After Effects 重新链接辅助脚本。
 - Writes `_CrossPlatformReport` with mapping JSON/CSV and After Effects relink helper scripts.
+- 在网页控制台集中查看规范化副本、重命名映射、冲突消解、跳过项和风险提醒，避免多个安全副本难以追踪。
+- Reviews normalized copies, rename mappings, collision resolutions, skipped items, and risk notes directly in the web console so safe copies remain traceable.
 - 通过 Windows companion agent 回报 Windows 磁盘容量和设备状态。
 - Reports Windows disk capacity and device state through the Windows companion agent.
 - 可把大型工程注册为单独 Syncthing 文件夹，并指定 Windows 目标磁盘/路径。
@@ -26,8 +28,8 @@ Red LAN Sync Dashboard is a local-first LAN control panel for a Mac/Windows Sync
 - Sends Wake-on-LAN packets when firmware and network settings support it.
 - 提供新电脑或 Android Syncthing 客户端的配对页面。
 - Provides a pairing page for new computers or Android Syncthing clients.
-- Mac Dock 与 Windows 桌面/开始菜单使用同一类 `Red LAN Sync Dashboard` 智能启动器：自动测试本机、文字域名和局域网 IP，并打开可操作的网页管理端。
-- The Mac Dock and Windows desktop/Start Menu use the same kind of `Red LAN Sync Dashboard` smart launcher: it tests localhost, the friendly alias, and LAN IP fallbacks, then opens the authenticated dashboard.
+- Mac Dock 与 Windows 桌面/开始菜单使用同一类 `SystemSync` 智能启动器：自动测试本机、文字域名和局域网 IP，并打开可操作的网页管理端。
+- The Mac Dock and Windows desktop/Start Menu use the same kind of `SystemSync` smart launcher: it tests localhost, the friendly alias, and LAN IP fallbacks, then opens the authenticated dashboard.
 - 检查配置的 GitHub 仓库是否有新版本，并显示更新预览气泡。
 - Checks the configured GitHub repository for newer tool architecture releases and shows an update preview bubble.
 - 支持网页控制台中文/英文切换。
@@ -53,8 +55,8 @@ Red LAN Sync Dashboard is a local-first LAN control panel for a Mac/Windows Sync
 After cloning for the first time, run preflight before copying the config. Preflight checks Python, config placeholders, the Windows companion package, Syncthing API, Unity Editor detection, and Adobe app detection.
 
 ```sh
-git clone https://github.com/RedHong01/RedLanSyncDashboard.git
-cd RedLanSyncDashboard
+git clone https://github.com/RedHong01/SystemSync.git
+cd SystemSync
 python3 scripts/preflight.py
 cp config.example.json config.json
 ```
@@ -136,8 +138,8 @@ Set `github_repo` and `current_version` in `config.json`:
 
 ```json
 {
-  "github_repo": "YOUR_GITHUB_USER/RedLanSyncDashboard",
-  "current_version": "0.1.2"
+  "github_repo": "RedHong01/SystemSync",
+  "current_version": "0.1.3"
 }
 ```
 

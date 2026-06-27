@@ -7,8 +7,8 @@ This flow is for first-time GitHub clone users. The goal is to recreate the full
 ## 1. Mac 端准备 / Prepare the Mac
 
 ```sh
-git clone https://github.com/RedHong01/RedLanSyncDashboard.git
-cd RedLanSyncDashboard
+git clone https://github.com/RedHong01/SystemSync.git
+cd SystemSync
 python3 scripts/preflight.py
 cp config.example.json config.json
 ```

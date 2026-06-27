@@ -1,5 +1,5 @@
 param(
-    [string]$InstallDir = "$env:ProgramData\RedLanSyncAgent",
+    [string]$InstallDir = "$env:ProgramData\SystemSyncAgent",
     [string]$BundleConfig = "$PSScriptRoot\agent-config.generated.json",
     [switch]$SkipStartupFallback
 )
@@ -25,8 +25,10 @@ function Set-DashboardHostsAlias {
     }
 
     $hostsPath = Join-Path $env:SystemRoot "System32\drivers\etc\hosts"
-    $startMarker = "# Red LAN Sync Dashboard alias start"
-    $endMarker = "# Red LAN Sync Dashboard alias end"
+    $startMarker = "# SystemSync alias start"
+    $endMarker = "# SystemSync alias end"
+    $legacyStartMarker = "# Red LAN Sync Dashboard alias start"
+    $legacyEndMarker = "# Red LAN Sync Dashboard alias end"
     $lines = if (Test-Path -LiteralPath $hostsPath) {
         @(Get-Content -LiteralPath $hostsPath)
     }
@@ -38,11 +40,11 @@ function Set-DashboardHostsAlias {
     $insideManagedBlock = $false
     foreach ($line in $lines) {
         $trimmed = $line.Trim()
-        if ($trimmed -eq $startMarker) {
+        if ($trimmed -eq $startMarker -or $trimmed -eq $legacyStartMarker) {
             $insideManagedBlock = $true
             continue
         }
-        if ($trimmed -eq $endMarker) {
+        if ($trimmed -eq $endMarker -or $trimmed -eq $legacyEndMarker) {
             $insideManagedBlock = $false
             continue
         }
@@ -89,7 +91,7 @@ Copy-Item -LiteralPath "$PSScriptRoot\DependencyScan.ps1" -Destination "$Install
 Copy-Item -LiteralPath "$PSScriptRoot\OpenDashboard.ps1" -Destination "$InstallDir\OpenDashboard.ps1" -Force
 Copy-Item -LiteralPath $BundleConfig -Destination "$InstallDir\agent-config.json" -Force
 
-$ruleName = "Red LAN Sync Companion 8766"
+$ruleName = "SystemSync Companion 8766"
 if (-not (Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue)) {
     New-NetFirewallRule `
         -DisplayName $ruleName `
@@ -118,7 +120,14 @@ $scriptPath = "$InstallDir\LanSyncAgent.ps1"
 $configPath = "$InstallDir\agent-config.json"
 $arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$scriptPath`" -ConfigPath `"$configPath`""
 
-$taskName = "Red LAN Sync Companion"
+$taskName = "SystemSync Companion"
+$legacyTaskName = "Red LAN Sync Companion"
+try {
+    Stop-ScheduledTask -TaskName $legacyTaskName -ErrorAction SilentlyContinue
+    Unregister-ScheduledTask -TaskName $legacyTaskName -Confirm:$false -ErrorAction SilentlyContinue
+}
+catch {
+}
 $taskInstalled = $false
 try {
     $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument $arguments
@@ -145,7 +154,11 @@ $startupFallbackPath = ""
 if (-not $SkipStartupFallback) {
     $startupDir = [Environment]::GetFolderPath("Startup")
     New-Item -ItemType Directory -Path $startupDir -Force | Out-Null
-    $startupFallbackPath = Join-Path $startupDir "RedLanSyncCompanion.vbs"
+    $legacyStartupFallbackPath = Join-Path $startupDir "RedLanSyncCompanion.vbs"
+    if (Test-Path -LiteralPath $legacyStartupFallbackPath) {
+        Remove-Item -LiteralPath $legacyStartupFallbackPath -Force -ErrorAction SilentlyContinue
+    }
+    $startupFallbackPath = Join-Path $startupDir "SystemSyncCompanion.vbs"
     $startupCommand = "powershell.exe $arguments"
     $startupCommand = $startupCommand.Replace('"', '""')
     @"
@@ -187,7 +200,7 @@ IconIndex=27
 "@ | Set-Content -LiteralPath $shortcutPath -Encoding ASCII
 
 $launcherPath = "$InstallDir\OpenDashboard.ps1"
-$dashboardShortcutPath = Join-Path ([Environment]::GetFolderPath("Desktop")) "Red LAN Sync Dashboard.lnk"
+$dashboardShortcutPath = Join-Path ([Environment]::GetFolderPath("Desktop")) "SystemSync.lnk"
 try {
     $shell = New-Object -ComObject WScript.Shell
     $shortcut = $shell.CreateShortcut($dashboardShortcutPath)
@@ -199,7 +212,7 @@ try {
 }
 catch {
     Write-Warning "无法创建智能启动器快捷方式，将创建直接 URL 兜底入口。错误：$($_.Exception.Message)"
-    $dashboardShortcutPath = Join-Path ([Environment]::GetFolderPath("Desktop")) "Red LAN Sync Dashboard.url"
+    $dashboardShortcutPath = Join-Path ([Environment]::GetFolderPath("Desktop")) "SystemSync.url"
     @"
 [InternetShortcut]
 URL=$dashboardEntryUrl/
@@ -208,12 +221,12 @@ IconIndex=13
 "@ | Set-Content -LiteralPath $dashboardShortcutPath -Encoding ASCII
 }
 
-$startMenuDir = Join-Path ([Environment]::GetFolderPath("Programs")) "Red LAN Sync"
+$startMenuDir = Join-Path ([Environment]::GetFolderPath("Programs")) "SystemSync"
 New-Item -ItemType Directory -Path $startMenuDir -Force | Out-Null
 Copy-Item -LiteralPath $dashboardShortcutPath -Destination (Join-Path $startMenuDir (Split-Path -Leaf $dashboardShortcutPath)) -Force
 
 Write-Host ""
-Write-Host "Red LAN Sync Companion 已安装并启动。" -ForegroundColor Green
+Write-Host "SystemSync Companion 已安装并启动。" -ForegroundColor Green
 Write-Host "安装目录: $InstallDir"
 Write-Host "监听端口: $($bundle.Port)"
 Write-Host "任务计划: $(if ($taskInstalled) { $taskName } else { '未创建，使用 Startup 兜底' })"

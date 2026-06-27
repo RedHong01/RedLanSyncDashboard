@@ -1,8 +1,8 @@
 # 架构 / Architecture
 
-Red LAN Sync Dashboard 刻意保持小型、可本地部署、易审计。
+SystemSync 刻意保持小型、可本地部署、易审计。
 
-Red LAN Sync Dashboard is intentionally small, locally deployable, and easy to audit.
+SystemSync is intentionally small, locally deployable, and easy to audit.
 
 ```text
 Mac Dock launcher
@@ -24,6 +24,8 @@ Windows browser
 - `server.py`: HTTP server, Syncthing API bridge, Wake-on-LAN sender, job runner, and pairing API.
 - `project_packager.py`：跨平台文件名规划、安全副本 worker 和报告写入器。
 - `project_packager.py`: cross-platform filename planner, safe-copy worker, and report writer.
+- `/api/normalizations` 与 `/api/normalizations/report`：扫描并读取 `_CrossPlatformReport`，让网页集中管理规范化副本和改名映射。
+- `/api/normalizations` and `/api/normalizations/report`: scan and read `_CrossPlatformReport` folders so the web UI can manage normalized copies and rename mappings in one place.
 - `dependency_auditor.py`：工程依赖扫描器，负责 Adobe 文件、Unity 工程、字体、插件、外部路径线索和 `_DependencyBundle` 打包。
 - `dependency_auditor.py`: project dependency scanner for Adobe files, Unity projects, fonts, plugins, external path signals, and `_DependencyBundle` packaging.
 - `scripts/preflight.py`：clone 后部署预检，检查配置、Syncthing、Windows 包和 Unity/Adobe 应用检测。
@@ -65,14 +67,14 @@ Windows browser
 - The dashboard is designed for trusted LAN use, not public internet exposure.
 - Syncthing 仍然是文件同步引擎；本项目负责设置编排、可视化和工程卫生检查。
 - Syncthing remains the file synchronization engine; this project orchestrates setup, visibility, and project hygiene.
-- 网页客户端由 Mac 控制端提供；其他设备可以使用 hosts 别名 `red-lan-sync.local` 或 Mac 局域网 IP。`127.0.0.1` 只代表当前正在使用的那台电脑。
-- The web client is served by the Mac controller; other devices can use the hosts alias `red-lan-sync.local` or the Mac LAN IP. `127.0.0.1` only means the computer currently using it.
+- 网页客户端由 Mac 控制端提供；其他设备可以使用 hosts 别名 `system-sync.local` 或 Mac 局域网 IP。`127.0.0.1` 只代表当前正在使用的那台电脑。
+- The web client is served by the Mac controller; other devices can use the hosts alias `system-sync.local` or the Mac LAN IP. `127.0.0.1` only means the computer currently using it.
 
 ## 工程安全 / Project Safety
 
-默认规范化流程不会重命名源文件夹。它会创建新的目标文件夹，并写入包含映射、跳过文件、冲突和可选 After Effects 辅助脚本的报告。源路径改名是独立确认动作：后端先返回改名清单和 plan hash，前端展示后，用户再次确认才会在源工程内按层级执行原地改名。
+默认规范化流程不会重命名源文件夹。它会创建新的目标文件夹，并写入包含映射、跳过文件、冲突和可选 After Effects 辅助脚本的报告。网页会扫描同步根目录和当前目标路径下的 `_CrossPlatformReport`，集中展示历史安全副本、改名映射、跳过项和风险提醒。源路径改名是独立确认动作：后端先返回改名清单和 plan hash，前端展示后，用户再次确认才会在源工程内按层级执行原地改名。
 
-The default normalization workflow never renames the source folder. It builds a new destination folder and writes a report with mappings, skipped files, collisions, and optional After Effects helper scripts. Source-path renaming is a separate confirmed action: the backend first returns a rename list and plan hash, the UI displays it, and only a second user confirmation applies in-place renames inside the source project.
+The default normalization workflow never renames the source folder. It builds a new destination folder and writes a report with mappings, skipped files, collisions, and optional After Effects helper scripts. The web UI scans `_CrossPlatformReport` folders under the sync root and current destination path, then centralizes historical safe copies, rename mappings, skipped items, and risk notes. Source-path renaming is a separate confirmed action: the backend first returns a rename list and plan hash, the UI displays it, and only a second user confirmation applies in-place renames inside the source project.
 
 依赖审计会把项目本地字体和 Adobe 辅助资产复制到 `_DependencyBundle`，但不会自动安装系统字体或第三方 Adobe 插件。系统字体和插件以清单形式记录，方便另一端人工确认授权、版本和安装方式。
 

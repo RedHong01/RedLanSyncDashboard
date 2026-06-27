@@ -35,8 +35,8 @@ powershell -ExecutionPolicy Bypass -File .\install-agent.ps1
 
 The installer will:
 
-- 安装 companion agent 到 `C:\ProgramData\RedLanSyncAgent`。
-- Install the companion agent to `C:\ProgramData\RedLanSyncAgent`.
+- 安装 companion agent 到 `C:\ProgramData\SystemSyncAgent`。
+- Install the companion agent to `C:\ProgramData\SystemSyncAgent`.
 - 开放 TCP 8766 防火墙规则。
 - Open the TCP 8766 firewall rule.
 - 创建登录启动计划任务。
@@ -75,7 +75,7 @@ The script uses `robocopy`; exit codes `0` through `7` are treated as success.
 If you have the companion token, the script can register the project through the Mac dashboard after seeding:
 
 ```powershell
-$token = (Get-Content "C:\ProgramData\RedLanSyncAgent\agent-config.json" -Raw | ConvertFrom-Json).Token
+$token = (Get-Content "C:\ProgramData\SystemSyncAgent\agent-config.json" -Raw | ConvertFrom-Json).Token
 
 .\windows\seed-normalized-project.ps1 `
   -Source "C:\Users\Red15\Sync\Motion_1_cross_platform" `

@@ -22,7 +22,7 @@ Windows 上可以直接把本地仓库加入 GitHub Desktop：
 On Windows, add the local checkout to GitHub Desktop:
 
 ```powershell
-& "$env:LOCALAPPDATA\GitHubDesktop\bin\github.bat" open "D:\ArtCenter\RedLanSyncDashboard"
+& "$env:LOCALAPPDATA\GitHubDesktop\bin\github.bat" open "D:\ArtCenter\SystemSync"
 ```
 
 也可以在 GitHub Desktop 中选择 `File -> Add local repository`，然后选择仓库路径。
@@ -31,13 +31,13 @@ Alternatively, use `File -> Add local repository` in GitHub Desktop and select t
 
 ## 网页客户端地址 / Web Client URL
 
-网页客户端是同一个 Mac 控制端页面，不会在 Windows companion agent 上另起一个独立控制台。Mac 日常入口应使用 Dock 里的 `Red LAN Sync`，Windows 日常入口应使用桌面或开始菜单里的 `Red LAN Sync Dashboard`；两端启动器都会自动选择可用地址并建立可操作会话。
+网页客户端是同一个 Mac 控制端页面，不会在 Windows companion agent 上另起一个独立控制台。Mac 日常入口应使用 Dock 里的 `SystemSync`，Windows 日常入口应使用桌面或开始菜单里的 `SystemSync`；两端启动器都会自动选择可用地址并建立可操作会话。
 
-The web client is the same Mac-hosted dashboard, not a separate dashboard served by the Windows companion agent. On Mac, use the Dock `Red LAN Sync`; on Windows, use the desktop or Start Menu `Red LAN Sync Dashboard`; both launchers select a reachable URL and open an authenticated session.
+The web client is the same Mac-hosted dashboard, not a separate dashboard served by the Windows companion agent. On Mac, use the Dock `SystemSync`; on Windows, use the desktop or Start Menu `SystemSync`; both launchers select a reachable URL and open an authenticated session.
 
 ```text
-Mac: Red LAN Sync.app
-Windows: Red LAN Sync Dashboard.lnk
+Mac: SystemSync.app
+Windows: SystemSync.lnk
 ```
 
 如果需要手动输入，使用 Pairing 页面显示的 Mac 局域网地址，例如：
@@ -82,7 +82,7 @@ These files are local runtime files and should not be committed:
 - `config.json`
 - `runtime-state.json`
 - `windows/agent-config.generated.json`
-- `C:\ProgramData\RedLanSyncAgent\agent-config.json`
+- `C:\ProgramData\SystemSyncAgent\agent-config.json`
 
 `agent-config.generated.json` 包含 companion token，只用于把 Windows agent 安装到某台电脑。
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Red5090 / RedM3Max LAN Sync</title>
+  <title>SystemSync</title>
   <link id="faviconLink" rel="icon" href="/app-icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles.css">
 </head>
@@ -13,7 +13,7 @@
       <div class="brand">
         <img class="brand-mark app-icon-image" src="/app-icon.svg" alt="" aria-hidden="true">
         <div>
-          <strong>Red Sync</strong>
+          <strong>SystemSync</strong>
           <span>Red5090 / RedM3Max</span>
         </div>
       </div>
@@ -224,6 +224,51 @@
           </div>
           <div class="progress-track"><span id="normalizeProgressBar"></span></div>
           <p id="normalizeDestination" class="mono muted"></p>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <div class="section-heading compact">
+          <div>
+            <p class="eyebrow">NORMALIZED COPIES</p>
+            <h2 data-i18n="normalizationLibraryTitle">规范化副本管理</h2>
+          </div>
+          <button class="button secondary" id="refreshReportsButton" type="button" data-i18n="refreshReports">刷新报告</button>
+        </div>
+        <p class="section-note" data-i18n="normalizationLibraryHint">统一查看安全副本、重命名映射、冲突和跳过项，避免多个规范化副本难以追踪。</p>
+        <div id="normalizationReports" class="report-list">
+          <div class="empty-state" data-i18n="normalizationReportsLoading">正在读取规范化报告</div>
+        </div>
+
+        <div id="normalizationDetailPanel" class="audit-summary is-hidden">
+          <div class="operation-panel report-detail-head">
+            <div>
+              <span data-i18n="selectedReport">当前报告</span>
+              <strong id="normalizationDetailTitle">--</strong>
+              <p id="normalizationDetailMeta" class="mono muted"></p>
+            </div>
+            <div class="report-actions">
+              <button class="button secondary" id="useReportSourceButton" type="button" data-i18n="useReportSource">填入源路径</button>
+              <button class="button secondary" id="useReportDestinationButton" type="button" data-i18n="useReportDestination">填入副本路径</button>
+              <button class="button secondary" id="copyReportPathButton" type="button" data-i18n="copyReportPath">复制报告路径</button>
+              <button class="button secondary" id="openReportButton" type="button" data-i18n="openReportFolder">在 Finder 打开</button>
+            </div>
+          </div>
+          <div class="metric-row report-metrics">
+            <div><span data-i18n="auditRenamed">需要改名</span><strong id="reportRenamed">0</strong></div>
+            <div><span data-i18n="auditCollisions">冲突消解</span><strong id="reportCollisions">0</strong></div>
+            <div><span data-i18n="auditSkipped">跳过</span><strong id="reportSkipped">0</strong></div>
+            <div><span data-i18n="reportRisks">风险/提醒</span><strong id="reportRisks">0</strong></div>
+          </div>
+          <div id="normalizationDetailChips" class="reason-chips"></div>
+          <div class="table-wrap report-map-table">
+            <table>
+              <thead>
+                <tr><th data-i18n="originalPath">原路径</th><th data-i18n="safePath">规范路径</th><th data-i18n="reason">原因</th></tr>
+              </thead>
+              <tbody id="normalizationMapRows"></tbody>
+            </table>
+          </div>
         </div>
 
         <div class="section-divider"></div>

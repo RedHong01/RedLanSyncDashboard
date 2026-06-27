@@ -39,9 +39,9 @@ You can also click `Install/Refresh Dock Shortcut` on the dashboard `Pairing` pa
 
 ## 网页访问地址 / Web Dashboard URL
 
-控制台网页由 Mac 控制端提供。Mac 本机推荐使用 Dock 里的 `Red LAN Sync` 智能启动器，它会优先打开 `http://127.0.0.1:8765`，必要时尝试 `red-lan-sync.local` 和 Mac 局域网 IP fallback。Windows companion installer 会安装 `OpenDashboard.ps1` 智能启动器，并创建桌面/开始菜单入口；启动器会依次测试 `red-lan-sync.local`、Mac 局域网 IP 和配置里的 fallback，找到可用地址后用 companion token 建立浏览器会话。
+控制台网页由 Mac 控制端提供。Mac 本机推荐使用 Dock 里的 `SystemSync` 智能启动器，它会优先打开 `http://127.0.0.1:8765`，必要时尝试 `system-sync.local` 和 Mac 局域网 IP fallback。Windows companion installer 会安装 `OpenDashboard.ps1` 智能启动器，并创建桌面/开始菜单入口；启动器会依次测试 `system-sync.local`、Mac 局域网 IP 和配置里的 fallback，找到可用地址后用 companion token 建立浏览器会话。
 
-The dashboard is served by the Mac controller. On the Mac, prefer the Dock `Red LAN Sync` smart launcher; it opens `http://127.0.0.1:8765` first, then tries `red-lan-sync.local` and Mac LAN IP fallbacks if needed. The Windows companion installer installs the `OpenDashboard.ps1` smart launcher and creates desktop/Start Menu entries; the launcher tests `red-lan-sync.local`, the Mac LAN IP, and configured fallbacks, then opens the reachable dashboard with the companion token.
+The dashboard is served by the Mac controller. On the Mac, prefer the Dock `SystemSync` smart launcher; it opens `http://127.0.0.1:8765` first, then tries `system-sync.local` and Mac LAN IP fallbacks if needed. The Windows companion installer installs the `OpenDashboard.ps1` smart launcher and creates desktop/Start Menu entries; the launcher tests `system-sync.local`, the Mac LAN IP, and configured fallbacks, then opens the reachable dashboard with the companion token.
 
 如果 hosts 别名不可用，双端启动器都会自动退回可用地址。手动输入时，Mac 本机可用 `http://127.0.0.1:8765`；Windows 或其他设备使用 Pairing 页面列出的 Mac 局域网地址，例如 `http://192.168.0.243:8765`。不要在 Windows 上使用 `http://127.0.0.1:8765`，因为它指向 Windows 自己。
 
@@ -57,8 +57,8 @@ If Windows cannot open it, check:
 - The Mac firewall allows inbound TCP 8765.
 - Windows 与 Mac 在同一个局域网内。
 - Windows and Mac are on the same LAN.
-- `C:\Windows\System32\drivers\etc\hosts` 中存在 `red-lan-sync.local` 到 Mac IP 的映射；如果 Mac IP 变化，重新运行 `python3 generate_windows_config.py` 并重跑 Windows installer。
-- `C:\Windows\System32\drivers\etc\hosts` contains the `red-lan-sync.local` to Mac IP mapping; if the Mac IP changes, rerun `python3 generate_windows_config.py` and then rerun the Windows installer.
+- `C:\Windows\System32\drivers\etc\hosts` 中存在 `system-sync.local` 到 Mac IP 的映射；如果 Mac IP 变化，重新运行 `python3 generate_windows_config.py` 并重跑 Windows installer。
+- `C:\Windows\System32\drivers\etc\hosts` contains the `system-sync.local` to Mac IP mapping; if the Mac IP changes, rerun `python3 generate_windows_config.py` and then rerun the Windows installer.
 
 ## Windows 节点 / Windows Node
 
@@ -78,9 +78,9 @@ powershell -ExecutionPolicy Bypass -File .\install-agent.ps1
 
 5. 确认 Windows 防火墙允许 TCP 8766 和 Syncthing 端口。 / Confirm Windows firewall allows TCP 8766 and Syncthing ports.
 
-安装脚本会创建两个入口：`Red LAN Sync Dashboard.lnk` 运行智能启动器并打开可操作的 Mac 控制台，`Wake RedM3Max.url` 打开本机 companion 页面；本机 companion 页面也提供一个跳转按钮，可根据当前配置打开网页管理端。
+安装脚本会创建两个入口：`SystemSync.lnk` 运行智能启动器并打开可操作的 Mac 控制台，`Wake RedM3Max.url` 打开本机 companion 页面；本机 companion 页面也提供一个跳转按钮，可根据当前配置打开网页管理端。
 
-The installer creates two entries: `Red LAN Sync Dashboard.lnk` runs the smart launcher and opens the authenticated Mac dashboard, and `Wake RedM3Max.url` opens the local companion page; that local page also includes a button that redirects to the configured dashboard.
+The installer creates two entries: `SystemSync.lnk` runs the smart launcher and opens the authenticated Mac dashboard, and `Wake RedM3Max.url` opens the local companion page; that local page also includes a button that redirects to the configured dashboard.
 
 ## 旧同步续传到 D 盘 / Resume Old Sync on the D Drive
 
@@ -96,9 +96,9 @@ The naming page provides a separate confirmed source-rename action, allowing the
 
 ## 工程依赖检查 / Project Dependency Check
 
-在 `Naming` 页面填入源工程路径后，可以点击 `检查依赖` 查看 Adobe 文件、Unity 工程线索、字体、插件和外部路径线索。点击 `打包依赖清单` 会在工程内创建 `_DependencyBundle`，其中包含 `dependency_manifest.json`、说明文件和可同步的项目本地字体/Adobe 辅助资产。
+在 `Naming` 页面填入源工程路径后，可以点击 `检查依赖` 查看 Adobe 文件、Unity 工程线索、字体、插件和外部路径线索。页面中的 `规范化副本管理` 会读取 `_CrossPlatformReport`，集中展示历史安全副本、重命名映射、冲突、跳过项和风险提醒。点击 `打包依赖清单` 会在工程内创建 `_DependencyBundle`，其中包含 `dependency_manifest.json`、说明文件和可同步的项目本地字体/Adobe 辅助资产。
 
-After entering a source project path on the `Naming` page, click `Check Dependencies` to review Adobe files, Unity project signals, fonts, plugins, and external path signals. Clicking `Bundle Dependency Manifest` creates `_DependencyBundle` inside the project with `dependency_manifest.json`, a README, and syncable project-local fonts/Adobe helper assets.
+After entering a source project path on the `Naming` page, click `Check Dependencies` to review Adobe files, Unity project signals, fonts, plugins, and external path signals. The `Normalized Copy Manager` reads `_CrossPlatformReport` folders and centralizes historical safe copies, rename mappings, collisions, skipped items, and risk notes. Clicking `Bundle Dependency Manifest` creates `_DependencyBundle` inside the project with `dependency_manifest.json`, a README, and syncable project-local fonts/Adobe helper assets.
 
 Windows 独立检查脚本：
 

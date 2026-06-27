@@ -1,8 +1,8 @@
 #!/bin/zsh
 set -euo pipefail
 
-APP_DIR="$HOME/Applications/Red LAN Sync.app"
-EXECUTABLE="$APP_DIR/Contents/MacOS/RedLanSync"
+APP_DIR="$HOME/Applications/SystemSync.app"
+EXECUTABLE="$APP_DIR/Contents/MacOS/SystemSync"
 PLIST="$APP_DIR/Contents/Info.plist"
 RESOURCES="$APP_DIR/Contents/Resources"
 SCRIPT_DIR="${0:A:h}"
@@ -10,10 +10,10 @@ ROOT_DIR="${SCRIPT_DIR:h}"
 RUNTIME_ASSETS="$ROOT_DIR/runtime-assets"
 LAUNCHER_SOURCE="$SCRIPT_DIR/OpenDashboard.sh"
 LAUNCHER="$RESOURCES/OpenDashboard.sh"
-SOURCE_ICNS="$SCRIPT_DIR/RedLanSync.icns"
+SOURCE_ICNS="$SCRIPT_DIR/SystemSync.icns"
 ICON_GENERATOR="$SCRIPT_DIR/generate_app_icon.py"
-ICONSET="$RESOURCES/RedLanSync.iconset"
-ICNS="$RESOURCES/RedLanSync.icns"
+ICONSET="$RESOURCES/SystemSync.iconset"
+ICNS="$RESOURCES/SystemSync.icns"
 
 mkdir -p "$APP_DIR/Contents/MacOS" "$RESOURCES"
 
@@ -23,15 +23,15 @@ cat > "$PLIST" <<'EOF'
 <plist version="1.0">
 <dict>
     <key>CFBundleExecutable</key>
-    <string>RedLanSync</string>
+    <string>SystemSync</string>
     <key>CFBundleIdentifier</key>
-    <string>local.red.lansync.dashboard</string>
+    <string>local.red.systemsync.dashboard</string>
     <key>CFBundleName</key>
-    <string>Red LAN Sync</string>
+    <string>SystemSync</string>
     <key>CFBundleDisplayName</key>
-    <string>Red LAN Sync</string>
+    <string>SystemSync</string>
     <key>CFBundleIconFile</key>
-    <string>RedLanSync</string>
+    <string>SystemSync</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleVersion</key>
@@ -94,7 +94,7 @@ chmod +x "$EXECUTABLE"
 chmod +x "$LAUNCHER"
 touch "$APP_DIR"
 
-if ! /usr/bin/defaults read com.apple.dock persistent-apps 2>/dev/null | /usr/bin/grep -q "Red LAN Sync.app"; then
+if ! /usr/bin/defaults read com.apple.dock persistent-apps 2>/dev/null | /usr/bin/grep -q "SystemSync.app"; then
     /usr/bin/defaults write com.apple.dock persistent-apps -array-add "<dict><key>tile-data</key><dict><key>file-data</key><dict><key>_CFURLString</key><string>$APP_DIR</string><key>_CFURLStringType</key><integer>0</integer></dict></dict><key>tile-type</key><string>file-tile</string></dict>"
 fi
 

@@ -1,8 +1,8 @@
 # 贡献指南 / Contributing
 
-感谢你改进 Red LAN Sync Dashboard。这个项目面向中文和英文社区，因此所有面向用户或开发者的说明内容都必须保持中英文双语。
+感谢你改进 SystemSync。这个项目面向中文和英文社区，因此所有面向用户或开发者的说明内容都必须保持中英文双语。
 
-Thank you for improving Red LAN Sync Dashboard. This project serves both Chinese and English readers, so all user-facing or developer-facing documentation must remain bilingual.
+Thank you for improving SystemSync. This project serves both Chinese and English readers, so all user-facing or developer-facing documentation must remain bilingual.
 
 ## 本地检查 / Local Checks
 

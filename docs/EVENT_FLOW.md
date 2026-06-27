@@ -31,8 +31,9 @@ This page describes the full event flow from cloning the repo to two-end sync, n
 1. `扫描命名` 调用 `/api/audit`，返回非法命名和冲突预览。 / `Scan Names` calls `/api/audit` and returns unsafe naming/collision preview.
 2. `创建安全副本` 调用 `/api/normalize`，生成规范化副本和 `_CrossPlatformReport`。 / `Create Safe Copy` calls `/api/normalize`, creating the normalized copy and `_CrossPlatformReport`.
 3. 可选源路径改名先调用 `/api/source-renames/preview`，确认后才调用 `/api/source-renames/apply`。 / Optional source renaming first calls `/api/source-renames/preview`; only after confirmation does it call `/api/source-renames/apply`.
-4. `检查依赖` 调用 `/api/dependencies/audit`，自动检测 Adobe、Unity、字体、插件、外部路径和 Windows 端缺失项。 / `Check Dependencies` calls `/api/dependencies/audit`, automatically detecting Adobe, Unity, fonts, plugins, external paths, and Windows-side gaps.
-5. `打包依赖清单` 会创建 `_DependencyBundle`，作为可同步的依赖说明和项目本地资产包。 / `Bundle Dependency Manifest` creates `_DependencyBundle` as a syncable manifest and project-local asset bundle.
+4. `规范化副本管理` 调用 `/api/normalizations` 和 `/api/normalizations/report`，集中查看历史安全副本、重命名映射、冲突、跳过项和风险提醒。 / `Normalized Copy Manager` calls `/api/normalizations` and `/api/normalizations/report` to review historical safe copies, rename mappings, collisions, skipped items, and risk notes in one place.
+5. `检查依赖` 调用 `/api/dependencies/audit`，自动检测 Adobe、Unity、字体、插件、外部路径和 Windows 端缺失项。 / `Check Dependencies` calls `/api/dependencies/audit`, automatically detecting Adobe, Unity, fonts, plugins, external paths, and Windows-side gaps.
+6. `打包依赖清单` 会创建 `_DependencyBundle`，作为可同步的依赖说明和项目本地资产包。 / `Bundle Dependency Manifest` creates `_DependencyBundle` as a syncable manifest and project-local asset bundle.
 
 ## 5. 更新事件 / Update Events
 

@@ -1,9 +1,11 @@
-const savedLanguage = localStorage.getItem("red-lan-sync-language");
+const savedLanguage = localStorage.getItem("system-sync-language") || localStorage.getItem("red-lan-sync-language");
 
 const state = {
   overview: null,
   audit: null,
   dependencyAudit: null,
+  normalizationReports: null,
+  normalizationDetail: null,
   activeJob: null,
   pairing: null,
   updateInfo: null,
@@ -49,8 +51,30 @@ const i18n = {
     previewSourceRename: "列出源路径改名",
     applySourceRename: "确认改名源路径",
     sourceRenameTitle: "待确认源路径改名",
+    normalizationLibraryTitle: "规范化副本管理",
+    normalizationLibraryHint: "统一查看安全副本、重命名映射、冲突和跳过项，避免多个规范化副本难以追踪。",
+    refreshReports: "刷新报告",
+    normalizationReportsLoading: "正在读取规范化报告",
+    noNormalizationReports: "还没有发现规范化副本报告",
+    selectedReport: "当前报告",
+    reportUpdatedAt: "更新于 {time}",
+    reportGeneratedAt: "生成于 {time}",
+    reportSource: "源：{path}",
+    reportDestination: "副本：{path}",
+    reportOpen: "查看",
+    reportRisks: "风险/提醒",
+    reportTruncated: "仅显示前 {count} 条映射",
+    reportWarnings: "提醒",
+    reportPostCopyRisks: "副本风险",
+    reportUnityMetaIssues: "Unity Meta 问题",
+    reportProjectFiles: "工程文件",
+    useReportSource: "填入源路径",
+    useReportDestination: "填入副本路径",
+    copyReportPath: "复制报告路径",
+    openReportFolder: "在 Finder 打开",
+    reportOpened: "已请求打开：{path}",
     dependencyTitle: "工程依赖检查",
-    dependencyHint: "识别 Adobe、字体、插件和外部路径依赖",
+    dependencyHint: "识别 Adobe、Unity、字体、插件和外部路径依赖",
     checkDependencies: "检查依赖",
     bundleDependencies: "打包依赖清单",
     dependencyAdobeFiles: "Adobe 文件",
@@ -105,7 +129,7 @@ const i18n = {
     controllerAccess: "控制台入口",
     copyLanUrl: "复制局域网地址",
     copyDeviceId: "复制本机设备 ID",
-    windowsAccessHint: "Mac/Windows 都推荐使用 Red LAN Sync Dashboard 启动器；手动输入时使用 Mac 局域网 IP，red-lan-sync.local 需要安装器写入 hosts。",
+    windowsAccessHint: "Mac/Windows 都推荐使用 SystemSync 启动器；手动输入时使用 Mac 局域网 IP，system-sync.local 需要安装器写入 hosts。",
     dockShortcutTitle: "Dock 快捷方式",
     dockShortcutBody: "把智能启动器固定在 macOS Dock：自动检测本机/局域网地址，并使用同一套应用图标。",
     uploadCustomIcon: "上传自定义图标",
@@ -263,8 +287,30 @@ const i18n = {
     previewSourceRename: "List Source Renames",
     applySourceRename: "Apply Source Renames",
     sourceRenameTitle: "Source Renames to Confirm",
+    normalizationLibraryTitle: "Normalized Copy Manager",
+    normalizationLibraryHint: "Review safe copies, rename mappings, collisions, and skipped items in one place so normalized copies do not become hard to track.",
+    refreshReports: "Refresh Reports",
+    normalizationReportsLoading: "Reading normalization reports",
+    noNormalizationReports: "No normalized copy reports found yet",
+    selectedReport: "Selected Report",
+    reportUpdatedAt: "Updated {time}",
+    reportGeneratedAt: "Generated {time}",
+    reportSource: "Source: {path}",
+    reportDestination: "Copy: {path}",
+    reportOpen: "View",
+    reportRisks: "Risks/Notes",
+    reportTruncated: "Showing first {count} mappings",
+    reportWarnings: "Warnings",
+    reportPostCopyRisks: "Copy Risks",
+    reportUnityMetaIssues: "Unity Meta Issues",
+    reportProjectFiles: "Project Files",
+    useReportSource: "Use Source Path",
+    useReportDestination: "Use Copy Path",
+    copyReportPath: "Copy Report Path",
+    openReportFolder: "Open in Finder",
+    reportOpened: "Requested open: {path}",
     dependencyTitle: "Project Dependency Check",
-    dependencyHint: "Detect Adobe, font, plugin, and external-path dependencies",
+    dependencyHint: "Detect Adobe, Unity, font, plugin, and external-path dependencies",
     checkDependencies: "Check Dependencies",
     bundleDependencies: "Bundle Dependency Manifest",
     dependencyAdobeFiles: "Adobe Files",
@@ -319,7 +365,7 @@ const i18n = {
     controllerAccess: "Controller Access",
     copyLanUrl: "Copy LAN URL",
     copyDeviceId: "Copy Device ID",
-    windowsAccessHint: "Use the Red LAN Sync Dashboard launcher on both Mac and Windows. For manual entry, use the Mac LAN IP; red-lan-sync.local requires the installer hosts entry.",
+    windowsAccessHint: "Use the SystemSync launcher on both Mac and Windows. For manual entry, use the Mac LAN IP; system-sync.local requires the installer hosts entry.",
     dockShortcutTitle: "Dock Shortcut",
     dockShortcutBody: "Pin the smart launcher to the macOS Dock: it detects local/LAN URLs and uses the shared app icon.",
     uploadCustomIcon: "Upload Custom Icon",
@@ -478,6 +524,8 @@ function applyTranslations() {
   if (state.overview) renderOverview(state.overview);
   if (state.audit) renderAuditSummary(state.audit);
   if (state.dependencyAudit) renderDependencyAudit(state.dependencyAudit);
+  if (state.normalizationReports) renderNormalizationReports(state.normalizationReports);
+  if (state.normalizationDetail) renderNormalizationReportDetail(state.normalizationDetail);
   if (state.sourceRenamePlan) renderSourceRenamePreview(state.sourceRenamePlan);
   if (state.pairing) renderPairing(state.pairing);
   if (state.updateInfo) renderUpdateBubble(state.updateInfo);
@@ -835,6 +883,136 @@ function renderSourceRenamePreview(plan) {
   $("applySourceRenameButton").disabled = !count;
 }
 
+function reportRiskCount(report) {
+  return Number(report.warning_count || 0) + Number(report.post_copy_risk_count || 0) + Number(report.unity_meta_issue_count || 0);
+}
+
+function reportGeneratedLabel(report) {
+  if (report.generated_at) return t("reportGeneratedAt", { time: report.generated_at });
+  if (report.updated_at) return t("reportUpdatedAt", { time: report.updated_at });
+  return "--";
+}
+
+function renderNormalizationReports(data) {
+  state.normalizationReports = data;
+  const reports = data.reports || [];
+  const container = $("normalizationReports");
+  if (!reports.length) {
+    container.innerHTML = `<div class="empty-state">${escapeHtml(t("noNormalizationReports"))}</div>`;
+    return;
+  }
+  container.innerHTML = reports.map((report) => {
+    const risks = reportRiskCount(report);
+    const path = report.report_dir || "";
+    return `
+      <div class="report-row">
+        <div class="report-main">
+          <strong>${escapeHtml(report.display_name || report.destination || path)}</strong>
+          <span class="mono" title="${escapeHtml(report.destination || "")}">${escapeHtml(t("reportDestination", { path: report.destination || "--" }))}</span>
+          <span class="mono" title="${escapeHtml(report.source || "")}">${escapeHtml(t("reportSource", { path: report.source || "--" }))}</span>
+          <em>${escapeHtml(reportGeneratedLabel(report))}</em>
+        </div>
+        <div class="report-stats">
+          <span>${escapeHtml(t("auditRenamed"))}<strong>${Number(report.renamed_entries || 0)}</strong></span>
+          <span>${escapeHtml(t("auditCollisions"))}<strong>${Number(report.collision_resolutions || 0)}</strong></span>
+          <span>${escapeHtml(t("reportRisks"))}<strong>${risks}</strong></span>
+        </div>
+        <button class="button secondary view-report" type="button" data-report-path="${escapeHtml(path)}">${escapeHtml(t("reportOpen"))}</button>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderReportChips(report) {
+  const chips = [];
+  const counts = report.project_file_counts || {};
+  Object.entries(counts).forEach(([key, value]) => {
+    chips.push(`${key.replaceAll("_", " ")} · ${value}`);
+  });
+  if (report.rename_map_truncated) chips.push(t("reportTruncated", { count: (report.rename_map || []).length }));
+  if ((report.warnings || []).length) chips.push(`${t("reportWarnings")} · ${(report.warnings || []).length}`);
+  if ((report.post_copy_risks || []).length) chips.push(`${t("reportPostCopyRisks")} · ${(report.post_copy_risks || []).length}`);
+  if ((report.unity_meta_pair_issues || []).length) chips.push(`${t("reportUnityMetaIssues")} · ${(report.unity_meta_pair_issues || []).length}`);
+  return chips.map((chip) => `<span class="reason-chip">${escapeHtml(chip)}</span>`).join("");
+}
+
+function renderNormalizationReportDetail(report) {
+  state.normalizationDetail = report;
+  $("normalizationDetailTitle").textContent = report.display_name || report.destination || report.report_dir || "--";
+  $("normalizationDetailMeta").textContent = [
+    reportGeneratedLabel(report),
+    report.report_dir || "",
+  ].filter(Boolean).join(" · ");
+  $("reportRenamed").textContent = Number(report.renamed_entries || 0);
+  $("reportCollisions").textContent = Number(report.collision_resolutions || 0);
+  $("reportSkipped").textContent = Number(report.skipped_entries || 0);
+  $("reportRisks").textContent = reportRiskCount(report);
+  $("normalizationDetailChips").innerHTML = renderReportChips(report);
+  $("normalizationMapRows").innerHTML = (report.rename_map || []).map((item) => `
+    <tr>
+      <td class="mono" title="${escapeHtml(item.source_abs || "")}">${escapeHtml(item.source_rel || item.source_abs || "")}</td>
+      <td class="mono" title="${escapeHtml(item.dest_abs || "")}">${escapeHtml(item.dest_rel || item.dest_abs || "")}</td>
+      <td>${(item.reasons || []).map((reason) => escapeHtml(t(reason))).join(state.lang === "zh" ? "、" : ", ")}</td>
+    </tr>
+  `).join("") || `<tr><td colspan="3">${escapeHtml(t("noRenameNeeded"))}</td></tr>`;
+  $("normalizationDetailPanel").classList.remove("is-hidden");
+}
+
+async function refreshNormalizationReports(showToast = false) {
+  const params = new URLSearchParams();
+  const destination = $("destinationPath")?.value.trim();
+  if (destination) params.append("candidate", destination);
+  try {
+    const result = await api(`/api/normalizations${params.toString() ? `?${params}` : ""}`);
+    renderNormalizationReports(result);
+    if (showToast) toast(t("updatedAt", { time: new Date().toLocaleTimeString(state.lang === "zh" ? "zh-CN" : "en-US", { hour12: false }) }));
+  } catch (error) {
+    toast(error.message, true);
+  }
+}
+
+async function loadNormalizationReport(reportDir) {
+  if (!reportDir) return;
+  try {
+    const params = new URLSearchParams({ path: reportDir, limit: "500" });
+    renderNormalizationReportDetail(await api(`/api/normalizations/report?${params}`));
+  } catch (error) {
+    toast(error.message, true);
+  }
+}
+
+function useReportSource() {
+  if (state.normalizationDetail?.source) {
+    $("sourcePath").value = state.normalizationDetail.source;
+    toast(t("copied"));
+  }
+}
+
+function useReportDestination() {
+  if (state.normalizationDetail?.destination) {
+    $("destinationPath").value = state.normalizationDetail.destination;
+    $("quickProjectLocalPath").value = state.normalizationDetail.destination;
+    toast(t("quickPathCopied"));
+  }
+}
+
+async function openNormalizationReport() {
+  if (!state.normalizationDetail?.report_dir) return;
+  const button = $("openReportButton");
+  setBusy(button, true, "busySending");
+  try {
+    const result = await api("/api/normalizations/reveal", {
+      method: "POST",
+      body: JSON.stringify({ report_dir: state.normalizationDetail.report_dir, target: "destination" }),
+    });
+    toast(result.supported === false ? result.message : t("reportOpened", { path: result.target || state.normalizationDetail.destination }));
+  } catch (error) {
+    toast(error.message, true);
+  } finally {
+    setBusy(button, false);
+  }
+}
+
 async function previewSourceRenames() {
   const button = $("previewSourceRenameButton");
   setBusy(button, true, "busyPreviewing");
@@ -1035,6 +1213,7 @@ async function pollActiveJob() {
       setBusy($("normalizeButton"), false);
       toast(t("safeCopyDone"));
       await refreshOverview();
+      await refreshNormalizationReports();
       return;
     }
     if (job.status === "failed") {
@@ -1318,7 +1497,7 @@ async function refreshPairing(showToast = false) {
 function renderUpdateBubble(info) {
   state.updateInfo = info;
   const node = $("updateBubble");
-  if (!info || !info.configured || !info.has_update || localStorage.getItem(`red-lan-sync-dismiss-update-${info.latest_version}`) === "1") {
+  if (!info || !info.configured || !info.has_update || localStorage.getItem(`system-sync-dismiss-update-${info.latest_version}`) === "1") {
     node.classList.add("is-hidden");
     return;
   }
@@ -1338,7 +1517,7 @@ async function checkUpdates() {
 
 function dismissUpdateBubble() {
   if (state.updateInfo?.latest_version) {
-    localStorage.setItem(`red-lan-sync-dismiss-update-${state.updateInfo.latest_version}`, "1");
+    localStorage.setItem(`system-sync-dismiss-update-${state.updateInfo.latest_version}`, "1");
   }
   $("updateBubble").classList.add("is-hidden");
 }
@@ -1393,6 +1572,7 @@ function setTab(tab) {
     node.classList.toggle("is-active", node.dataset.panel === tab);
   });
   $("pageTitle").textContent = t(pageTitleKeys[tab]);
+  if (tab === "naming") refreshNormalizationReports();
   if (tab === "storage") refreshDisks();
   if (tab === "pairing") refreshPairing();
 }
@@ -1403,7 +1583,7 @@ document.querySelectorAll(".nav-tab").forEach((button) => {
 
 $("languageSelect").addEventListener("change", (event) => {
   state.lang = event.target.value;
-  localStorage.setItem("red-lan-sync-language", state.lang);
+  localStorage.setItem("system-sync-language", state.lang);
   applyTranslations();
 });
 $("refreshButton").addEventListener("click", () => refreshOverview(true));
@@ -1415,6 +1595,11 @@ $("previewSourceRenameButton").addEventListener("click", previewSourceRenames);
 $("applySourceRenameButton").addEventListener("click", applySourceRenames);
 $("dependencyAuditButton").addEventListener("click", () => runDependencyAudit(false));
 $("dependencyBundleButton").addEventListener("click", () => runDependencyAudit(true));
+$("refreshReportsButton").addEventListener("click", () => refreshNormalizationReports(true));
+$("useReportSourceButton").addEventListener("click", useReportSource);
+$("useReportDestinationButton").addEventListener("click", useReportDestination);
+$("copyReportPathButton").addEventListener("click", () => copyText(state.normalizationDetail?.report_dir || ""));
+$("openReportButton").addEventListener("click", openNormalizationReport);
 $("wakeButton").addEventListener("click", wakeRemote);
 $("resumeSyncButton").addEventListener("click", resumeSync);
 $("targetForm").addEventListener("submit", saveTarget);
@@ -1438,6 +1623,11 @@ document.addEventListener("click", (event) => {
     copyText(copyButton.dataset.copy);
     return;
   }
+  const reportButton = event.target.closest(".view-report");
+  if (reportButton) {
+    loadNormalizationReport(reportButton.dataset.reportPath || "");
+    return;
+  }
   const pendingButton = event.target.closest(".use-pending");
   if (pendingButton) {
     $("newDeviceId").value = pendingButton.dataset.deviceId || "";
@@ -1447,6 +1637,7 @@ document.addEventListener("click", (event) => {
 
 applyTranslations();
 refreshOverview(true);
+refreshNormalizationReports();
 checkUpdates();
 window.setInterval(refreshOverview, 5000);
 window.setInterval(checkUpdates, 30 * 60 * 1000);

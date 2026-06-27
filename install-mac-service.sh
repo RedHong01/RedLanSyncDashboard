@@ -2,8 +2,11 @@
 set -euo pipefail
 
 SCRIPT_DIR=${0:A:h}
-INSTALL_DIR="$HOME/Library/Application Support/RedLanSyncDashboard"
-PLIST="$HOME/Library/LaunchAgents/com.redwang.lansyncdashboard.plist"
+INSTALL_DIR="$HOME/Library/Application Support/SystemSync"
+LEGACY_INSTALL_DIR="$HOME/Library/Application Support/RedLanSyncDashboard"
+PLIST="$HOME/Library/LaunchAgents/com.redwang.systemsync.plist"
+LABEL="com.redwang.systemsync"
+LEGACY_LABEL="com.redwang.lansyncdashboard"
 LOG_DIR="$HOME/Library/Logs"
 PYTHON_BIN="$(command -v python3)"
 BACKUP_DIR="$(mktemp -d)"
@@ -13,6 +16,8 @@ mkdir -p "$HOME/Library/LaunchAgents" "$LOG_DIR" "$INSTALL_DIR"
 for runtime_file in config.json runtime-state.json; do
     if [[ -f "$INSTALL_DIR/$runtime_file" ]]; then
         cp "$INSTALL_DIR/$runtime_file" "$BACKUP_DIR/$runtime_file"
+    elif [[ -f "$LEGACY_INSTALL_DIR/$runtime_file" ]]; then
+        cp "$LEGACY_INSTALL_DIR/$runtime_file" "$BACKUP_DIR/$runtime_file"
     fi
 done
 
@@ -31,7 +36,7 @@ cat > "$PLIST" <<EOF
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.redwang.lansyncdashboard</string>
+    <string>$LABEL</string>
     <key>ProgramArguments</key>
     <array>
         <string>$PYTHON_BIN</string>
@@ -44,16 +49,17 @@ cat > "$PLIST" <<EOF
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>$LOG_DIR/LanSyncDashboard.log</string>
+    <string>$LOG_DIR/SystemSync.log</string>
     <key>StandardErrorPath</key>
-    <string>$LOG_DIR/LanSyncDashboard.error.log</string>
+    <string>$LOG_DIR/SystemSync.error.log</string>
 </dict>
 </plist>
 EOF
 
-launchctl bootout "gui/$UID/com.redwang.lansyncdashboard" 2>/dev/null || true
+launchctl bootout "gui/$UID/$LEGACY_LABEL" 2>/dev/null || true
+launchctl bootout "gui/$UID/$LABEL" 2>/dev/null || true
 launchctl bootstrap "gui/$UID" "$PLIST"
-launchctl enable "gui/$UID/com.redwang.lansyncdashboard"
-launchctl kickstart -k "gui/$UID/com.redwang.lansyncdashboard"
+launchctl enable "gui/$UID/$LABEL"
+launchctl kickstart -k "gui/$UID/$LABEL"
 
-echo "LAN Sync Dashboard installed: http://127.0.0.1:8765"
+echo "SystemSync installed: http://127.0.0.1:8765"

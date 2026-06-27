@@ -66,7 +66,7 @@ def config_placeholders(config: dict) -> list[str]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Check whether a cloned Red LAN Sync Dashboard repo is ready to deploy.")
+    parser = argparse.ArgumentParser(description="Check whether a cloned SystemSync repo is ready to deploy.")
     parser.add_argument("--json", action="store_true", help="Print JSON only.")
     parser.add_argument("--timeout", type=int, default=3, help="HTTP timeout in seconds.")
     args = parser.parse_args()
@@ -115,7 +115,7 @@ def main() -> int:
     if args.json:
         print(json.dumps(result, ensure_ascii=False, indent=2))
     else:
-        print("Red LAN Sync Dashboard preflight")
+        print("SystemSync preflight")
         print("Repo:", result["repo"])
         for item in checks:
             status = "OK" if item.get("ok") else "WARN"
