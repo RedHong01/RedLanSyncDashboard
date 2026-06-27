@@ -24,8 +24,10 @@ Windows browser
 - `server.py`: HTTP server, Syncthing API bridge, Wake-on-LAN sender, job runner, and pairing API.
 - `project_packager.py`：跨平台文件名规划、安全副本 worker 和报告写入器。
 - `project_packager.py`: cross-platform filename planner, safe-copy worker, and report writer.
-- `dependency_auditor.py`：工程依赖扫描器，负责 Adobe 文件、字体、插件、外部路径线索和 `_DependencyBundle` 打包。
-- `dependency_auditor.py`: project dependency scanner for Adobe files, fonts, plugins, external path signals, and `_DependencyBundle` packaging.
+- `dependency_auditor.py`：工程依赖扫描器，负责 Adobe 文件、Unity 工程、字体、插件、外部路径线索和 `_DependencyBundle` 打包。
+- `dependency_auditor.py`: project dependency scanner for Adobe files, Unity projects, fonts, plugins, external path signals, and `_DependencyBundle` packaging.
+- `scripts/preflight.py`：clone 后部署预检，检查配置、Syncthing、Windows 包和 Unity/Adobe 应用检测。
+- `scripts/preflight.py`: post-clone deployment preflight for config, Syncthing, the Windows package, and Unity/Adobe app detection.
 - `static/`：浏览器控制台前端。
 - `static/`: browser dashboard.
 - `static/app-icon.svg`：网页 favicon、侧边栏品牌图标和 Dock 快捷方式卡片使用的共享应用图标。
@@ -42,8 +44,8 @@ Windows browser
 - `windows/LanSyncAgent.ps1`: Windows companion service.
 - `windows/OpenDashboard.ps1`：Windows 智能启动器，自动测试文字域名和 Mac IP fallback，并用配对 token 打开可操作网页会话。
 - `windows/OpenDashboard.ps1`: Windows smart launcher that tests the friendly alias and Mac IP fallback, then opens an authenticated browser session with the pairing token.
-- `windows/DependencyScan.ps1`：Windows 字体、Adobe 应用和插件清单扫描函数，供 companion API 和独立检查脚本复用。
-- `windows/DependencyScan.ps1`: Windows font, Adobe app, and plugin inventory functions shared by the companion API and standalone check script.
+- `windows/DependencyScan.ps1`：Windows 字体、Adobe 应用、Unity Editor 和插件清单扫描函数，供 companion API 和独立检查脚本复用。
+- `windows/DependencyScan.ps1`: Windows font, Adobe app, Unity Editor, and plugin inventory functions shared by the companion API and standalone check script.
 - `windows/install-agent.ps1`：Windows 安装器、防火墙规则、计划任务和桌面唤醒快捷方式。
 - `windows/install-agent.ps1`: Windows installer, firewall rule, scheduled task, and desktop wake shortcut.
 - `windows/install-agent.ps1` 还会把 `dashboard_alias` 映射到 Mac IP，并生成文字域名网页管理快捷方式。

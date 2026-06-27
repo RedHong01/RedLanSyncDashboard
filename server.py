@@ -36,7 +36,7 @@ RUNTIME_ASSET_DIR = APP_DIR / "runtime-assets"
 CUSTOM_ICON_META_PATH = RUNTIME_ASSET_DIR / "app-icon.json"
 CONFIG_PATH = APP_DIR / "config.json"
 STATE_PATH = APP_DIR / "runtime-state.json"
-APP_VERSION = "0.1.1"
+APP_VERSION = "0.1.2"
 ICON_UPLOAD_TYPES = {
     "image/png": ("png", b"\x89PNG\r\n\x1a\n"),
     "image/jpeg": ("jpg", b"\xff\xd8"),

@@ -8,14 +8,16 @@ The dependency audit detects Adobe, font, plugin, preset, and external-path depe
 
 - Adobe 工程文件：After Effects、Premiere Pro、Photoshop、Illustrator、InDesign、Adobe XD、Animate。
 - Adobe project files: After Effects, Premiere Pro, Photoshop, Illustrator, InDesign, Adobe XD, and Animate.
+- Unity 工程根目录、Unity YAML 文件、`.meta` 文件和本机 Unity Editor 安装。
+- Unity project roots, Unity YAML files, `.meta` files, and installed Unity Editors.
 - 项目内携带的字体文件：`.ttf`、`.otf`、`.ttc`、`.dfont`、`.woff`、`.woff2`。
 - Project-local font files: `.ttf`, `.otf`, `.ttc`, `.dfont`, `.woff`, `.woff2`.
 - 可读文本文件中的字体名称和外部路径线索。
 - Font names and external path references in text-readable project files.
 - 项目内携带的 Adobe 资产：`.jsx`、`.jsxbin`、`.ffx`、`.mogrt`、`.aex`、`.plugin`、`.zxp`。
 - Project-local Adobe assets: `.jsx`, `.jsxbin`, `.ffx`, `.mogrt`, `.aex`, `.plugin`, `.zxp`.
-- 当前端点已安装的字体、Adobe 应用和常见 Adobe 插件目录。
-- Installed fonts, Adobe applications, and common Adobe plugin folders on the current endpoint.
+- 当前端点已安装的字体、Adobe 应用、Unity Editor 和常见 Adobe 插件目录。
+- Installed fonts, Adobe applications, Unity Editors, and common Adobe plugin folders on the current endpoint.
 
 ## 打包策略 / Packaging Strategy
 

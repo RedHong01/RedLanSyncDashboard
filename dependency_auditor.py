@@ -53,6 +53,21 @@ TEXT_SCAN_EXTENSIONS = {
     ".svg",
 }
 
+UNITY_PROJECT_EXTENSIONS = {
+    ".asmdef",
+    ".asset",
+    ".controller",
+    ".mat",
+    ".meta",
+    ".playable",
+    ".prefab",
+    ".scenetemplate",
+    ".shader",
+    ".shadergraph",
+    ".shadersubgraph",
+    ".unity",
+}
+
 FONT_PATTERNS = [
     re.compile(r"font(?:Family|Name|PostScriptName)?[\"'\s:=]+([A-Za-z0-9][^\"'<>{}\r\n]{1,80})", re.IGNORECASE),
     re.compile(r"font-family\s*:\s*([^;{}\r\n]{1,120})", re.IGNORECASE),
@@ -258,6 +273,60 @@ def scan_adobe_apps() -> list[dict]:
     return sorted(apps, key=lambda item: item["name"].casefold())
 
 
+def scan_unity_apps() -> list[dict]:
+    apps = []
+    seen = set()
+    system = platform.system()
+
+    def add(path: Path, version: str = "") -> None:
+        if not path.exists():
+            return
+        key = str(path).casefold()
+        if key in seen:
+            return
+        seen.add(key)
+        apps.append({"name": path.name, "version": version or path.parent.name, "path": str(path)})
+
+    if system == "Darwin":
+        for path in Path("/Applications").glob("Unity/Hub/Editor/*/Unity.app"):
+            add(path, path.parent.name)
+        for path in Path("/Applications").glob("Unity*/Unity.app"):
+            add(path)
+        add(Path("/Applications/Unity Hub.app"), "hub")
+    elif system == "Windows":
+        bases = [os.environ.get("ProgramFiles"), os.environ.get("ProgramFiles(x86)"), os.environ.get("LOCALAPPDATA")]
+        for base_value in [value for value in bases if value]:
+            base = Path(base_value)
+            for path in base.glob("Unity/Hub/Editor/*/Editor/Unity.exe"):
+                add(path, path.parents[1].name)
+            for path in base.glob("Unity*/Editor/Unity.exe"):
+                add(path)
+            for path in base.glob("Programs/Unity/Hub/Editor/*/Editor/Unity.exe"):
+                add(path, path.parents[1].name)
+    return sorted(apps, key=lambda item: (item.get("version", ""), item["name"]))
+
+
+def detect_unity_project(source: Path) -> dict:
+    project_settings = source / "ProjectSettings"
+    packages = source / "Packages"
+    assets = source / "Assets"
+    version = ""
+    version_file = project_settings / "ProjectVersion.txt"
+    if version_file.exists():
+        text = decode_text_sample(version_file, max_bytes=20000)
+        match = re.search(r"m_EditorVersion:\s*([^\r\n]+)", text)
+        if match:
+            version = match.group(1).strip()
+    detected = project_settings.is_dir() and assets.is_dir()
+    return {
+        "detected": detected,
+        "project_settings": str(project_settings) if project_settings.exists() else "",
+        "packages_manifest": str(packages / "manifest.json") if (packages / "manifest.json").exists() else "",
+        "assets_dir": str(assets) if assets.exists() else "",
+        "editor_version": version,
+    }
+
+
 def endpoint_inventory() -> dict:
     return {
         "hostname": platform.node(),
@@ -266,6 +335,7 @@ def endpoint_inventory() -> dict:
         "fonts": scan_installed_fonts(),
         "adobe_plugins": scan_adobe_plugins(),
         "adobe_apps": scan_adobe_apps(),
+        "unity_apps": scan_unity_apps(),
     }
 
 
@@ -324,6 +394,15 @@ def dependency_markdown(result: dict) -> str:
     ]
     if result["adobe_files"]:
         lines.extend("- `{relative_path}` ({application})".format(**item) for item in result["adobe_files"][:200])
+    else:
+        lines.append("- None detected")
+    lines.extend(["", "## Unity Project"])
+    unity = result.get("unity_project", {})
+    if unity.get("detected"):
+        version = unity.get("editor_version") or "unknown editor version"
+        lines.append("- Unity project detected ({})".format(version))
+    elif result.get("unity_files"):
+        lines.append("- Unity-style files detected outside a full Unity project root")
     else:
         lines.append("- None detected")
     lines.extend(["", "## Font References"])
@@ -395,10 +474,13 @@ def audit_project_dependencies(
     installed_fonts = scan_installed_fonts()
     installed_plugins = scan_adobe_plugins()
     adobe_apps = scan_adobe_apps()
+    unity_apps = scan_unity_apps()
+    unity_project = detect_unity_project(source)
     font_refs = set()
     external_paths = set()
     text_reference_files = []
     adobe_files = []
+    unity_files = []
     project_fonts = []
     project_adobe_assets = []
     total_files = 0
@@ -409,6 +491,8 @@ def audit_project_dependencies(
         rel = safe_rel(path, source)
         if suffix in ADOBE_PROJECT_EXTENSIONS:
             adobe_files.append({"relative_path": rel, "application": ADOBE_PROJECT_EXTENSIONS[suffix], "extension": suffix})
+        if suffix in UNITY_PROJECT_EXTENSIONS:
+            unity_files.append({"relative_path": rel, "extension": suffix})
         if suffix in FONT_EXTENSIONS:
             project_fonts.append({"relative_path": rel, "name": display_name_from_font(path), "extension": suffix})
         if suffix in ADOBE_PROJECT_ASSET_EXTENSIONS:
@@ -437,17 +521,24 @@ def audit_project_dependencies(
             "font_reference_count": len(font_references),
             "external_reference_count": len(external_paths),
             "project_adobe_asset_count": len(project_adobe_assets),
+            "unity_project_detected": bool(unity_project.get("detected")),
+            "unity_file_count": len(unity_files),
             "installed_font_count": len(installed_fonts),
             "installed_adobe_plugin_count": len(installed_plugins),
+            "installed_unity_count": len(unity_apps),
             "adobe_dependency_review_required": bool(adobe_files),
+            "unity_review_required": bool(unity_project.get("detected") or unity_files),
         },
         "categories": [
             "adobe_project_files" if adobe_files else "",
+            "unity_project" if unity_project.get("detected") or unity_files else "",
             "fonts" if project_fonts or font_references else "",
             "adobe_plugins_and_presets" if project_adobe_assets or adobe_files else "",
             "external_paths" if external_paths else "",
         ],
         "adobe_files": adobe_files[:500],
+        "unity_project": unity_project,
+        "unity_files": unity_files[:500],
         "project_fonts": project_fonts[:500],
         "font_references": font_references[:500],
         "project_adobe_assets": project_adobe_assets[:500],
@@ -457,11 +548,13 @@ def audit_project_dependencies(
             "fonts_sample": installed_fonts[:200],
             "adobe_plugins_sample": installed_plugins[:200],
             "adobe_apps": adobe_apps,
+            "unity_apps": unity_apps,
         },
         "remote_comparison": {},
         "bundle": {},
         "warnings": [
             "Binary Adobe files can hide font/plugin usage. Open the project in the Adobe app and save text interchange formats when deeper extraction is needed.",
+            "Unity projects are detected from ProjectSettings/Assets and Unity YAML-style files; full package resolution still depends on the Unity project opening cleanly in the target editor version.",
             "Fonts and plugins may be licensed or platform-specific; the dashboard packages manifests and project-local assets, but does not auto-install them.",
         ],
     }

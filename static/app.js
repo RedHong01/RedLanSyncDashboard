@@ -65,6 +65,10 @@ const i18n = {
     dependencyNoFindings: "没有发现明显依赖线索",
     dependencyReviewRequired: "需要人工核对 Adobe 插件/字体",
     dependencyRemoteUnavailable: "Windows 依赖清单暂时不可用",
+    dependencyUnityProject: "Unity 工程",
+    dependencyUnityFiles: "Unity 文件",
+    dependencyUnityEditors: "已安装 Unity",
+    dependencyUnityReview: "需要核对 Unity 版本/Packages",
     resumeSync: "继续当前同步",
     resumeSyncHint: "恢复暂停项并重新扫描当前同步文件夹",
     quickSyncTitle: "新增同步文件夹",
@@ -275,6 +279,10 @@ const i18n = {
     dependencyNoFindings: "No obvious dependency signals found",
     dependencyReviewRequired: "Manual Adobe plugin/font review required",
     dependencyRemoteUnavailable: "Windows dependency inventory is unavailable",
+    dependencyUnityProject: "Unity Project",
+    dependencyUnityFiles: "Unity Files",
+    dependencyUnityEditors: "Installed Unity",
+    dependencyUnityReview: "Review Unity version/packages",
     resumeSync: "Resume Current Sync",
     resumeSyncHint: "Resume paused items and rescan the current sync folder",
     quickSyncTitle: "Add Sync Folder",
@@ -924,6 +932,19 @@ function dependencyRows(result) {
   (result.adobe_files || []).slice(0, 20).forEach((item) => {
     rows.push({ category: "Adobe", item: item.relative_path, status: item.application });
   });
+  if (result.unity_project?.detected) {
+    rows.push({
+      category: t("dependencyUnityProject"),
+      item: result.unity_project.assets_dir || result.source || "Unity",
+      status: result.unity_project.editor_version || t("dependencyUnityReview"),
+    });
+  }
+  (result.unity_files || []).slice(0, 20).forEach((item) => {
+    rows.push({ category: t("dependencyUnityFiles"), item: item.relative_path, status: item.extension });
+  });
+  (result.installed?.unity_apps || []).slice(0, 10).forEach((item) => {
+    rows.push({ category: t("dependencyUnityEditors"), item: item.path || item.name, status: item.version || item.name });
+  });
   (result.font_references || []).slice(0, 20).forEach((item) => {
     rows.push({
       category: t("dependencyFonts"),
@@ -956,6 +977,9 @@ function renderDependencyAudit(result) {
     || `<span class="reason-chip">${escapeHtml(t("dependencyNoFindings"))}</span>`;
   if (summary.adobe_dependency_review_required) {
     $("dependencyChips").innerHTML += `<span class="reason-chip warning-chip">${escapeHtml(t("dependencyReviewRequired"))}</span>`;
+  }
+  if (summary.unity_review_required) {
+    $("dependencyChips").innerHTML += `<span class="reason-chip warning-chip">${escapeHtml(t("dependencyUnityReview"))}</span>`;
   }
   if (result.remote_error) {
     $("dependencyChips").innerHTML += `<span class="reason-chip warning-chip">${escapeHtml(t("dependencyRemoteUnavailable"))}</span>`;

@@ -18,8 +18,8 @@ Red LAN Sync Dashboard is a local-first LAN control panel for a Mac/Windows Sync
 - Reports Windows disk capacity and device state through the Windows companion agent.
 - 可把大型工程注册为单独 Syncthing 文件夹，并指定 Windows 目标磁盘/路径。
 - Registers large projects as separate Syncthing folders with a chosen Windows target disk/path.
-- 检测 Adobe 工程、字体、插件、预设和外部路径依赖，并把项目本地依赖打包进 `_DependencyBundle` 同步到另一端。
-- Detects Adobe project, font, plugin, preset, and external-path dependencies, then bundles project-local dependencies into `_DependencyBundle` for sync.
+- 检测 Adobe/Unity 工程、字体、插件、预设和外部路径依赖，并把项目本地依赖打包进 `_DependencyBundle` 同步到另一端。
+- Detects Adobe/Unity projects, fonts, plugins, presets, and external-path dependencies, then bundles project-local dependencies into `_DependencyBundle` for sync.
 - 可从命名检查或存储页面新增同步文件夹。
 - Adds new sync folders from either the naming workflow or the storage workflow.
 - 在固件和网络支持时发送 Wake-on-LAN 唤醒包。
@@ -37,8 +37,8 @@ Red LAN Sync Dashboard is a local-first LAN control panel for a Mac/Windows Sync
 
 ## 要求 / Requirements
 
-- Mac 控制端需要 Python 3.10 或更新版本。
-- Python 3.10 or newer on the Mac controller.
+- Mac 控制端需要 Python 3.9 或更新版本。
+- Python 3.9 or newer on the Mac controller.
 - 每台桌面节点都需要安装并运行 Syncthing。
 - Syncthing installed and running on each desktop node.
 - Windows companion agent 需要 Windows PowerShell 5+。
@@ -46,14 +46,24 @@ Red LAN Sync Dashboard is a local-first LAN control panel for a Mac/Windows Sync
 - 两台设备需要在同一个局域网内，才能获得直连同步和 Wake-on-LAN 的最佳效果。
 - The two devices should be on the same LAN for direct sync and Wake-on-LAN.
 
-## Mac 快速开始 / Quick Start on Mac
+## Clone 快速复刻 / Clone Quick Setup
 
-复制 `config.example.json` 为 `config.json`，然后填写设备 ID、局域网地址和同步路径。
+第一次 clone 后先运行预检，再复制配置文件。预检会检查 Python、配置占位符、Windows companion 包、Syncthing API、Unity Editor 和 Adobe 应用检测能力。
 
-Copy `config.example.json` to `config.json`, then fill in your device IDs, LAN addresses, and sync paths.
+After cloning for the first time, run preflight before copying the config. Preflight checks Python, config placeholders, the Windows companion package, Syncthing API, Unity Editor detection, and Adobe app detection.
 
 ```sh
+git clone https://github.com/RedHong01/RedLanSyncDashboard.git
+cd RedLanSyncDashboard
+python3 scripts/preflight.py
 cp config.example.json config.json
+```
+
+然后填写设备 ID、局域网地址和同步路径。完整流程见 [Clone 复刻部署 / Clone setup](docs/CLONE_SETUP.md)。
+
+Then fill in your device IDs, LAN addresses, and sync paths. See [Clone 复刻部署 / Clone setup](docs/CLONE_SETUP.md) for the full flow.
+
+```sh
 python3 server.py
 ```
 
@@ -127,7 +137,7 @@ Set `github_repo` and `current_version` in `config.json`:
 ```json
 {
   "github_repo": "YOUR_GITHUB_USER/RedLanSyncDashboard",
-  "current_version": "0.1.1"
+  "current_version": "0.1.2"
 }
 ```
 
@@ -150,6 +160,8 @@ Every time a feature, API, deployment flow, directory structure, front-end modul
 ## 文档 / Docs
 
 - [架构 / Architecture](docs/ARCHITECTURE.md)
+- [事件流 / Event flow](docs/EVENT_FLOW.md)
+- [Clone 复刻部署 / Clone setup](docs/CLONE_SETUP.md)
 - [部署 / Deployment](docs/DEPLOYMENT.md)
 - [多端开发 / Multi-endpoint development](docs/MULTI_ENDPOINT_DEVELOPMENT.md)
 - [工程依赖审计 / Project dependency audit](docs/DEPENDENCY_AUDIT.md)

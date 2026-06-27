@@ -79,6 +79,40 @@ function Get-LanSyncAdobeAppInventory {
     return @($items | Sort-Object name)
 }
 
+function Get-LanSyncUnityAppInventory {
+    $items = New-Object System.Collections.Generic.List[object]
+    $seen = New-Object System.Collections.Generic.HashSet[string]
+
+    function Add-UnityEditor {
+        param([string]$Path, [string]$Version = "")
+        if ([string]::IsNullOrWhiteSpace($Path) -or -not (Test-Path -LiteralPath $Path)) { return }
+        $key = $Path.ToLowerInvariant()
+        if (-not $seen.Add($key)) { return }
+        $items.Add([PSCustomObject]@{
+            name = [IO.Path]::GetFileName($Path)
+            version = $Version
+            path = $Path
+        })
+    }
+
+    foreach ($base in @($env:ProgramFiles, ${env:ProgramFiles(x86)}, $env:LOCALAPPDATA)) {
+        if ([string]::IsNullOrWhiteSpace($base)) { continue }
+        foreach ($editor in @(
+            (Join-Path $base "Unity\Hub\Editor"),
+            (Join-Path $base "Programs\Unity\Hub\Editor")
+        )) {
+            if (-not (Test-Path -LiteralPath $editor)) { continue }
+            Get-ChildItem -LiteralPath $editor -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+                Add-UnityEditor -Path (Join-Path $_.FullName "Editor\Unity.exe") -Version $_.Name
+            }
+        }
+        Get-ChildItem -LiteralPath $base -Directory -Filter "Unity*" -ErrorAction SilentlyContinue | ForEach-Object {
+            Add-UnityEditor -Path (Join-Path $_.FullName "Editor\Unity.exe") -Version $_.Name
+        }
+    }
+    return @($items | Sort-Object version, name)
+}
+
 function Get-LanSyncDependencyInventory {
     return [PSCustomObject]@{
         hostname = $env:COMPUTERNAME
@@ -87,5 +121,6 @@ function Get-LanSyncDependencyInventory {
         fonts = @(Get-LanSyncFontInventory)
         adobe_plugins = @(Get-LanSyncAdobePluginInventory)
         adobe_apps = @(Get-LanSyncAdobeAppInventory)
+        unity_apps = @(Get-LanSyncUnityAppInventory)
     }
 }

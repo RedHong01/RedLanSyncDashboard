@@ -2,6 +2,12 @@
 
 ## Mac 控制端 / Mac Controller
 
+0. Clone 后先运行预检。 / After cloning, run preflight first:
+
+```sh
+python3 scripts/preflight.py
+```
+
 1. 安装并启动 Syncthing。 / Install and start Syncthing.
 2. 复制 `config.example.json` 为 `config.json`。 / Copy `config.example.json` to `config.json`.
 3. 填写本机和远端设备 ID、局域网 IP、MAC 地址和同步根目录。 / Fill in the local and remote device IDs, LAN IPs, MAC addresses, and sync roots.
@@ -90,9 +96,9 @@ The naming page provides a separate confirmed source-rename action, allowing the
 
 ## 工程依赖检查 / Project Dependency Check
 
-在 `Naming` 页面填入源工程路径后，可以点击 `检查依赖` 查看 Adobe 文件、字体、插件和外部路径线索。点击 `打包依赖清单` 会在工程内创建 `_DependencyBundle`，其中包含 `dependency_manifest.json`、说明文件和可同步的项目本地字体/Adobe 辅助资产。
+在 `Naming` 页面填入源工程路径后，可以点击 `检查依赖` 查看 Adobe 文件、Unity 工程线索、字体、插件和外部路径线索。点击 `打包依赖清单` 会在工程内创建 `_DependencyBundle`，其中包含 `dependency_manifest.json`、说明文件和可同步的项目本地字体/Adobe 辅助资产。
 
-After entering a source project path on the `Naming` page, click `Check Dependencies` to review Adobe files, fonts, plugins, and external path signals. Clicking `Bundle Dependency Manifest` creates `_DependencyBundle` inside the project with `dependency_manifest.json`, a README, and syncable project-local fonts/Adobe helper assets.
+After entering a source project path on the `Naming` page, click `Check Dependencies` to review Adobe files, Unity project signals, fonts, plugins, and external path signals. Clicking `Bundle Dependency Manifest` creates `_DependencyBundle` inside the project with `dependency_manifest.json`, a README, and syncable project-local fonts/Adobe helper assets.
 
 Windows 独立检查脚本：
 
