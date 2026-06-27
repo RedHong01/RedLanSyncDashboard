@@ -37,7 +37,7 @@ CUSTOM_ICON_META_PATH = RUNTIME_ASSET_DIR / "app-icon.json"
 CONFIG_PATH = APP_DIR / "config.json"
 STATE_PATH = APP_DIR / "runtime-state.json"
 APP_DISPLAY_NAME = "SystemSync"
-APP_VERSION = "0.1.4"
+APP_VERSION = "0.1.5"
 ICON_UPLOAD_TYPES = {
     "image/png": ("png", b"\x89PNG\r\n\x1a\n"),
     "image/jpeg": ("jpg", b"\xff\xd8"),
@@ -140,13 +140,13 @@ def dashboard_alias(config):
 
 def dashboard_urls(config):
     urls = ["http://127.0.0.1:{}".format(config["listen_port"])]
-    alias = dashboard_alias(config)
-    if alias:
-        urls.append("http://{}:{}".format(alias, config["listen_port"]))
     urls.extend(
         "http://{}:{}".format(address, config["listen_port"])
         for address in local_ip_candidates(config)
     )
+    alias = dashboard_alias(config)
+    if alias:
+        urls.append("http://{}:{}".format(alias, config["listen_port"]))
     return list(dict.fromkeys(urls))
 
 

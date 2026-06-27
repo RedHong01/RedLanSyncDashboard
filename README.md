@@ -139,7 +139,7 @@ Set `github_repo` and `current_version` in `config.json`:
 ```json
 {
   "github_repo": "RedHong01/SystemSync",
-  "current_version": "0.1.4"
+  "current_version": "0.1.5"
 }
 ```
 

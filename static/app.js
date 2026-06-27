@@ -129,6 +129,10 @@ const i18n = {
     controllerAccess: "控制台入口",
     copyLanUrl: "复制局域网地址",
     copyDeviceId: "复制本机设备 ID",
+    urlKindLocal: "本机 Mac",
+    urlKindLan: "推荐：局域网 IP",
+    urlKindAlias: "别名：需 hosts",
+    urlKindRemote: "可选入口",
     windowsAccessHint: "Mac/Windows 都推荐使用 SystemSync 启动器；手动输入时使用 Mac 局域网 IP，system-sync.local 需要安装器写入 hosts。",
     dockShortcutTitle: "Dock 快捷方式",
     dockShortcutBody: "把智能启动器固定在 macOS Dock：自动检测本机/局域网地址，并使用同一套应用图标。",
@@ -365,6 +369,10 @@ const i18n = {
     controllerAccess: "Controller Access",
     copyLanUrl: "Copy LAN URL",
     copyDeviceId: "Copy Device ID",
+    urlKindLocal: "Local Mac",
+    urlKindLan: "Recommended: LAN IP",
+    urlKindAlias: "Alias: hosts required",
+    urlKindRemote: "Optional URL",
     windowsAccessHint: "Use the SystemSync launcher on both Mac and Windows. For manual entry, use the Mac LAN IP; system-sync.local requires the installer hosts entry.",
     dockShortcutTitle: "Dock Shortcut",
     dockShortcutBody: "Pin the smart launcher to the macOS Dock: it detects local/LAN URLs and uses the shared app icon.",
@@ -615,6 +623,26 @@ function preferredLanDashboardUrl(urls) {
     })
     || urls[0]
     || "";
+}
+
+function dashboardUrlKind(value) {
+  const host = dashboardUrlHost(value);
+  if (!host) return "remote";
+  if (host === "localhost" || host.startsWith("127.")) return "local";
+  if (isIpv4DashboardUrl(value)) return "lan";
+  if (host.endsWith(".local")) return "alias";
+  return "remote";
+}
+
+function dashboardUrlLabel(value) {
+  const kind = dashboardUrlKind(value);
+  const key = {
+    local: "urlKindLocal",
+    lan: "urlKindLan",
+    alias: "urlKindAlias",
+    remote: "urlKindRemote",
+  }[kind];
+  return t(key);
 }
 
 function toast(message, error = false) {
@@ -1354,11 +1382,14 @@ function renderPairing(data) {
   state.pairing = data;
   const urls = data.controller.dashboard_urls || [];
   $("controllerUrls").innerHTML = urls.length
-    ? urls.map((url) => `
-      <button class="copy-link" type="button" data-copy="${escapeHtml(url)}">
-        <span>${escapeHtml(url)}</span><em>${escapeHtml(t("copyAction"))}</em>
+    ? urls.map((url) => {
+      const kind = dashboardUrlKind(url);
+      return `
+      <button class="copy-link url-${escapeHtml(kind)}" type="button" data-copy="${escapeHtml(url)}">
+        <span><strong>${escapeHtml(url)}</strong><small>${escapeHtml(dashboardUrlLabel(url))}</small></span><em>${escapeHtml(t("copyAction"))}</em>
       </button>
-    `).join("")
+    `;
+    }).join("")
     : `<div class="empty-state">${escapeHtml(t("loading"))}</div>`;
   $("controllerDeviceId").textContent = data.controller.device_id || "--";
   const dock = data.dock || {};

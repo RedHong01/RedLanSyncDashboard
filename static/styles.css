@@ -591,11 +591,39 @@ button {
 }
 
 .copy-link span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.copy-link strong {
+  min-width: 0;
   overflow: hidden;
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 11px;
+  font-weight: 750;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.copy-link small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.copy-link.url-lan {
+  border-color: rgba(0, 137, 112, 0.45);
+  background: #f2fbf8;
+}
+
+.copy-link.url-lan small {
+  color: var(--green);
+}
+
+.copy-link.url-alias small {
+  color: #8a6a00;
 }
 
 .copy-link em {

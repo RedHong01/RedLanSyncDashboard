@@ -112,7 +112,9 @@ def main() -> int:
     print("config:", config_path)
     print("output:", output)
     print("shortcut:", shortcut)
-    print("dashboard:", payload["DashboardAliasUrl"] or payload["DashboardUrl"])
+    print("dashboard:", payload["DashboardUrl"])
+    if payload["DashboardAliasUrl"]:
+        print("alias:", payload["DashboardAliasUrl"])
     return 0
 
 
